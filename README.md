@@ -10,3 +10,5 @@ This project is a collaborative effort of the following members:
 - Kurt Tan Jun Wei 
 
 - Daniel Tang Yiyao 
+
+- Lim Jun Wei
