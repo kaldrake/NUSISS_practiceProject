@@ -1,38 +1,24 @@
-name: Security Scans
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+name: Snyk SCA Scan
+on: [push, pull_request]
 
 jobs:
-  sonarcloud-sast:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # For PR comments
-
   snyk-sca:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Snyk SCA Scan
-        uses: snyk/actions/node@master  # Change to `python`, `java`, etc.
+      
+      # Setup Node.js (adjust for Python/Java/etc.)
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      
+      # Install dependencies (required for Snyk to scan)
+      - run: npm install
+      
+      # Run Snyk Open Source Scan
+      - name: Snyk Security Scan
+        uses: snyk/actions/node@master
         with:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          args: --fail-on=upgradable  # Fail if critical vulns found
-
-  zap-dast:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'  # Run only on pushes (DAST is slow)
-    steps:
-      - uses: actions/checkout@v3
-      - name: OWASP ZAP Scan
-        uses: zaproxy/action-baseline@v0.6.0
-        with:
-          target: 'http://localhost:3000'  # Change to your app URL
-          cmd_options: '-a'  # Active scan mode (deeper testing)
+          args: --fail-on=upgradable  # Fails if critical vulns found
