@@ -1,24 +1,48 @@
-name: Snyk SCA Scan
-on: [push, pull_request]
+name: Snyk SCA Scan (Java)
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly scan for new vulnerabilities
 
 jobs:
   snyk-sca:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
-      # Setup Node.js (adjust for Python/Java/etc.)
-      - name: Setup Node
-        uses: actions/setup-node@v3
+
+      # Set up Java with Maven
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          node-version: 18
-      
-      # Install dependencies (required for Snyk to scan)
-      - run: npm install
-      
-      # Run Snyk Open Source Scan
-      - name: Snyk Security Scan
-        uses: snyk/actions/node@master
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      # Build project to resolve dependencies
+      - name: Build with Maven
+        run: mvn clean install -DskipTests
+
+      # Snyk SCA Scan
+      - name: Run Snyk Security Scan
+        uses: snyk/actions/maven@master
         with:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          args: --fail-on=upgradable  # Fails if critical vulns found
+          args: |
+            --severity-threshold=high
+            --fail-on=upgradable
+            --scan-all-unmanaged
+            --project-name=${{ github.repository }}
+        
+      # Optional: Monitor for long-term tracking
+      - name: Snyk Monitor
+        if: github.event_name == 'push'
+        uses: snyk/actions/maven@master
+        with:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          command: monitor
+          args: |
+            --project-name=${{ github.repository }}
+            --remote-repo-url=${{ github.repositoryUrl }}
