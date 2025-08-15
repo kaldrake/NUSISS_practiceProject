@@ -1,27 +1,47 @@
-name: Snyk SCA Scan (Java)
+name: Combined Security Scan (Snyk + SonarQube)
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+    types: [opened, synchronize, reopened]
   schedule:
     - cron: '0 0 * * 1'  # Weekly scan for new vulnerabilities
 
 jobs:
-  snyk-sca:
+  security-scans:
+    name: Security Scans
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      # Checkout code
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for SonarQube analysis
 
       # Set up Java with Maven
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
           java-version: '17'
+          distribution: 'temurin'
           cache: 'maven'
 
-      # Build project to resolve dependencies
+      # Cache dependencies
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      # Build project
       - name: Build with Maven
         run: mvn clean install -DskipTests
 
@@ -35,8 +55,8 @@ jobs:
             --fail-on=upgradable
             --scan-all-unmanaged
             --project-name=${{ github.repository }}
-        
-      # Optional: Monitor for long-term tracking
+
+      # Snyk Monitor (only on push)
       - name: Snyk Monitor
         if: github.event_name == 'push'
         uses: snyk/actions/maven@master
@@ -46,3 +66,9 @@ jobs:
           args: |
             --project-name=${{ github.repository }}
             --remote-repo-url=${{ github.repositoryUrl }}
+
+      # SonarQube Scan
+      - name: Run SonarQube Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=kaldrake_NUSISS_practiceProject
