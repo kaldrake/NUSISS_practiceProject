@@ -43,7 +43,7 @@ jobs:
 
       # Build project
       - name: Build with Maven
-        run: mvn clean install -DskipTests
+        run: mvn -f backend/pom.xml clean install -DskipTests -s ./tempSettings.xml
 
       # Snyk SCA Scan
       - name: Run Snyk Security Scan
