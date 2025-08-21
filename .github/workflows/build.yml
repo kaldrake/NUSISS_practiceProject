@@ -48,8 +48,9 @@ jobs:
       # Snyk SCA Scan
       - name: Run Snyk Security Scan
         uses: snyk/actions/maven@master
-        with:
+        env:  # ✅ FIXED: Changed from 'with:' to 'env:'
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
           args: |
             --severity-threshold=high
             --fail-on=upgradable
@@ -60,8 +61,9 @@ jobs:
       - name: Snyk Monitor
         if: github.event_name == 'push'
         uses: snyk/actions/maven@master
-        with:
+        env:  # ✅ FIXED: Changed from 'with:' to 'env:'
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
           command: monitor
           args: |
             --project-name=${{ github.repository }}
