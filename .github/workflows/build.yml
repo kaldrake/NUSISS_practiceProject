@@ -1,83 +1,70 @@
 name: Combined Security Scan (Snyk + SonarQube)
 on:
-push:
-branches: [main, develop, feature-jason]
-pull_request:
-branches: [main]
-types: [opened, synchronize, reopened]
-schedule:
-- cron: '0 0 * * 1'
+  push:
+    branches: [main, develop, feature-jason]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '0 0 * * 1'
 
 jobs:
-security-scans:
-name: Security Scans
-runs-on: ubuntu-latest
-steps:
-- uses: actions/checkout@v4
-with:
-fetch-depth: 0
+  security-scans:
+    name: Security Scans
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-- name: Set up JDK 17
-uses: actions/setup-java@v4
-with:
-java-version: '17'
-distribution: 'temurin'
-cache: 'maven'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-- name: Cache SonarQube packages
-uses: actions/cache@v4
-with:
-path: ~/.sonar/cache
-key: ${{ runner.os }}-sonar
-restore-keys: ${{ runner.os }}-sonar
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
-- name: Cache Maven packages
-uses: actions/cache@v4
-with:
-path: ~/.m2
-key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-restore-keys: ${{ runner.os }}-m2
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
-      # Build project
       # Build project first
-- name: Build with Maven
-        run: mvn -f backend/pom.xml clean install -DskipTests -s ./tempSettings.xml
+      - name: Build with Maven
         run: mvn -f backend/pom.xml clean install -DskipTests
 
-      # Snyk SCA Scan - FIXED SYNTAX
-- name: Run Snyk Security Scan
-        uses: snyk/actions/maven@master
+      - name: Run Snyk Security Scan
         run: |
           cd backend
           npx snyk test --severity-threshold=high --fail-on=upgradable
-       env:
-SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high --fail-on=upgradable --scan-all-unmanaged --project-name=${{ github.repository }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # Snyk Monitor - FIXED SYNTAX
-- name: Snyk Monitor
-if: github.event_name == 'push'
-        uses: snyk/actions/maven@master
+      - name: Snyk Monitor
+        if: github.event_name == 'push'
         run: |
           cd backend
           npx snyk monitor --project-name=${{ github.repository }}
-       env:
-SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
-          args: --file=backend/pom.xml --project-name=${{ github.repository }} --remote-repo-url=${{ github.repositoryUrl }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # SonarQube Scan - FIXED SYNTAX
       # SonarQube Scan
-- name: Run SonarQube Analysis
-run: |
-         cd backend
-         mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-         -Dsonar.projectKey=kaldrake_NUSISS_practiceProject \
-         -Dsonar.java.binaries=target/classes \
-         -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-       env:
-SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run SonarQube Analysis
+        run: |
+          cd backend
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          -Dsonar.projectKey=kaldrake_NUSISS_practiceProject \
+          -Dsonar.java.binaries=target/classes \
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
