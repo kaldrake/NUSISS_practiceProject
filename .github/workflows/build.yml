@@ -38,29 +38,26 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      # Build project
+      # Build project first
       - name: Build with Maven
-        run: mvn -f backend/pom.xml clean install -DskipTests -s ./tempSettings.xml
+        run: mvn -f backend/pom.xml clean install -DskipTests
 
-      # Snyk SCA Scan - FIXED SYNTAX
       - name: Run Snyk Security Scan
-        uses: snyk/actions/maven@master
+        run: |
+          cd backend
+          npx snyk test --severity-threshold=high --fail-on=upgradable
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high --fail-on=upgradable --scan-all-unmanaged --project-name=${{ github.repository }}
 
-      # Snyk Monitor - FIXED SYNTAX
       - name: Snyk Monitor
         if: github.event_name == 'push'
-        uses: snyk/actions/maven@master
+        run: |
+          cd backend
+          npx snyk monitor --project-name=${{ github.repository }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
-          args: --file=backend/pom.xml --project-name=${{ github.repository }} --remote-repo-url=${{ github.repositoryUrl }}
 
-      # SonarQube Scan - FIXED SYNTAX
+      # SonarQube Scan
       - name: Run SonarQube Analysis
         run: |
           cd backend
