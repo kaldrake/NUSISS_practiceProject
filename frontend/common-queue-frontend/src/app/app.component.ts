@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { AuthService } from './services/auth.service';
 import { Observable } from 'rxjs';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-root',
@@ -70,13 +71,15 @@ export class AppComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private snackBar: MatSnackBar
   ) {
     this.isAuthenticated$ = this.authService.isAuthenticated$;
   }
 
   logout(): void {
     this.authService.logout();
+    this.snackBar.open('Logout successful!', 'Close', { duration: 3000 });
     this.router.navigate(['/home']);
   }
 }

@@ -18,6 +18,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import sg.edu.nus.iss.commonQueueApp.service.BusinessUserDetailsService;
 
 import java.util.Arrays;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /**
  * Debug Security Configuration - allows all requests for testing purposes
@@ -34,7 +35,8 @@ public class SimpleSecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         // Using NoOpPasswordEncoder for debugging - NOT recommended for production
-        return NoOpPasswordEncoder.getInstance();
+//        return NoOpPasswordEncoder.getInstance();
+        return new BCryptPasswordEncoder();
     }
 
     @Bean

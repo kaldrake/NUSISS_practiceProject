@@ -26,10 +26,10 @@ export const routes: Routes = [
     path: 'customer/dashboard',
     loadComponent: () => import('./components/customer-dashboard/customer-dashboard.component').then(m => m.CustomerDashboardComponent)
   },
-  {
-    path: 'feedback/:queueEntryId',
-    loadComponent: () => import('./components/feedback-form/feedback-form.component').then(m => m.FeedbackFormComponent)
-  },
+  // {
+  //   path: 'feedback/:queueEntryId',
+  //   loadComponent: () => import('./components/feedback-form/feedback-form.component').then(m => m.FeedbackFormComponent)
+  // },
   {
     path: 'business-login',
     loadComponent: () => import('./components/business-login/business-login.component').then(m => m.BusinessLoginComponent)
@@ -42,9 +42,9 @@ export const routes: Routes = [
     path: 'queue-management/:businessId',
     loadComponent: () => import('./components/queue-management/queue-management.component').then(m => m.QueueManagementComponent)
   },
-  {
-    path: 'public-display/:businessId',
-    loadComponent: () => import('./components/public-display/public-display.component').then(m => m.PublicDisplayComponent)
-  },
+  // {
+  //   path: 'public-display/:businessId',
+  //   loadComponent: () => import('./components/public-display/public-display.component').then(m => m.PublicDisplayComponent)
+  // },
   { path: '**', redirectTo: '/home' }
 ];
