@@ -9,9 +9,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import sg.edu.nus.iss.commonQueueApp.dto.ApiResponse;
-//import sg.edu.nus.iss.commonQueueApp.dto.BusinessResponse;
+import sg.edu.nus.iss.commonQueueApp.dto.BusinessResponse;
 import sg.edu.nus.iss.commonQueueApp.entity.Business;
 import sg.edu.nus.iss.commonQueueApp.repository.BusinessRepository;
+import sg.edu.nus.iss.commonQueueApp.config.JwtUtil;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -29,6 +30,8 @@ public class AuthController {
 
     @Autowired
     private BusinessRepository businessRepository;
+    
+    private final JwtUtil jwtUtil = new JwtUtil();
 
     @PostMapping("/business/login")
     public ResponseEntity<?> businessLogin(@Valid @RequestBody LoginRequest loginRequest) {
@@ -52,10 +55,11 @@ public class AuthController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Login successful");
-//            response.put("business", BusinessResponse.fromEntity(business));
+            response.put("business", BusinessResponse.fromEntity(business));
 
-            // In real application, generate JWT token here
-            // response.put("token", jwtUtils.generateToken(authentication));
+            // Generate JWT token
+            String x = authentication.getName();
+            response.put("token", jwtUtil.generateToken(authentication.getName()));
 
             return ResponseEntity.ok(response);
 

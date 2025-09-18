@@ -27,7 +27,7 @@ export class AuthService {
       .pipe(
         tap(response => {
           if (response.token) {
-            //localStorage.setItem('token', response.token);
+            localStorage.setItem('token', response.token);
             localStorage.setItem('business', JSON.stringify(response.business));
             this.isAuthenticatedSubject.next(true);
             this.currentUserSubject.next(response.user);
