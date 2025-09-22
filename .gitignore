@@ -18,3 +18,5 @@ target/
 .idea/
 *.iml
 
+# lock ile
+*-lock.json
