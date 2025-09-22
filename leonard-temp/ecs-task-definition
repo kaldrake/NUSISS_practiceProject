@@ -1,0 +1,71 @@
+{
+    "containerDefinitions": [
+        {
+            "cpu": 512,
+            "memory": 2048,
+            "name": "fullstack-container",
+            "image": "905418191531.dkr.ecr.ap-southeast-1.amazonaws.com/nusiss-repository:latest",
+            "essential": true,
+            "portMappings": [
+                {
+                    "containerPort": 80,
+                    "hostPort": 80,
+                    "protocol": "tcp"
+                },
+                {
+                    "containerPort": 8080,
+                    "hostPort": 8080,
+                    "protocol": "tcp"
+                }
+            ],
+            "environment": [],
+            "secrets": [
+                {
+                    "name": "SPRING_DATASOURCE_USERNAME",
+                    "valueFrom": "SPRING_DATASOURCE_USERNAME"
+                },
+                {
+                    "name": "SPRING_DATASOURCE_PASSWORD",
+                    "valueFrom": "SPRING_DATASOURCE_PASSWORD"
+                },
+                {
+                    "name": "SPRING_DATASOURCE_URL",
+                    "valueFrom": "SPRING_DATASOURCE_URL"
+                },
+                {
+                    "name": "MYSQL_ROOT_PASSWORD",
+                    "valueFrom": "MYSQL_ROOT_PASSWORD"
+                },
+                {
+                    "name": "MYSQL_DATABASE",
+                    "valueFrom": "MYSQL_DATABASE"
+                },
+                {
+                    "name": "MYSQL_USER",
+                    "valueFrom": "MYSQL_USER"
+                },
+                {
+                    "name": "MYSQL_PASSWORD",
+                    "valueFrom": "MYSQL_PASSWORD"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/my-webapp",
+                    "awslogs-region": "ap-southeast-1",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            },
+            "mountPoints": [],
+            "systemControls": [],
+            "volumesFrom": []
+        }
+    ],
+    "family": "main-app-td",
+    "requiresCompatibilities": ["FARGATE"],
+    "networkMode": "awsvpc",
+    "cpu": "512",
+    "memory": "2048",
+    "executionRoleArn": "arn:aws:iam::905418191531:role/ecsTaskExecutionRole"
+}

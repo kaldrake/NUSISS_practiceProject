@@ -1,0 +1,8 @@
+MYSQL_DATABASE                  =common_queue
+MYSQL_USER                      =myuser001
+SPRING_DATASOURCE_USERNAME      =projectuser
+SPRING_DATASOURCE_URL           =jdbc:mysql://127.0.0.1:3306/common_queue?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Singapore
+
+MYSQL_PASSWORD                  =mypassword123
+MYSQL_ROOT_PASSWORD             =r00tP@ssword
+SPRING_DATASOURCE_PASSWORD      =projectpassword
