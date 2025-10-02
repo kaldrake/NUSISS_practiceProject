@@ -1,17 +1,19 @@
 services:
   db:
-    image: mysql:8.0
+    build:
+      context: ./db
+    #image: mysql:8.0
     container_name: db
     environment:
-      MYSQL_DATABASE: common_queue
-      MYSQL_USER: appuser
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE:  ${MYSQL_DATABASE}  #common_queue
+      MYSQL_USER:  ${MYSQL_USER}          #appuser
+      MYSQL_PASSWORD:  ${MYSQL_PASSWORD}  #secret
+      MYSQL_ROOT_PASSWORD:  ${MYSQL_ROOT_PASSWORD}  #rootpass
     ports:
       - "3306:3306"
     volumes:
       - dbdata:/var/lib/mysql
-      - ./db/init:/docker-entrypoint-initdb.d
+      #- ./init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-prootpass"]
       interval: 5s
@@ -27,11 +29,16 @@ services:
       db:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/common_queue?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Singapore
-      SPRING_DATASOURCE_USERNAME: appuser
-      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL} #jdbc:mysql://db:3306/common_queue?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Singapore
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME} # appuser
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD} #  secret
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     restart: unless-stopped
 
   frontend:

@@ -1,11 +1,41 @@
 {
+    "family": "main-app-td",
     "containerDefinitions": [
         {
-            "cpu": 512,
-            "memory": 256,
-            "name": "frontend-container",
-            "image": "905418191531.dkr.ecr.ap-southeast-1.amazonaws.com/nusiss-repository:frontend-latest",
+            "cpu": 0,
+            "dependsOn": [
+                {
+                    "condition": "HEALTHY",
+                    "containerName": "backend"
+                },
+                {
+                    "condition": "HEALTHY",
+                    "containerName": "db"
+                }
+            ],
+            "environment": [],
             "essential": true,
+            "healthCheck": {
+                "command": [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:80/health || exit 1"
+                ],
+                "interval": 10,
+                "retries": 5,
+                "startPeriod": 20,
+                "timeout": 5
+            },
+            "image": "905418191531.dkr.ecr.ap-southeast-1.amazonaws.com/nusiss-repository:frontend-latest",
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "ecs/fargate/commonqueue",
+                    "awslogs-region": "ap-southeast-1",
+                    "awslogs-stream-prefix": "frontend"
+                }
+            },
+            "mountPoints": [],
+            "name": "frontend",
             "portMappings": [
                 {
                     "containerPort": 80,
@@ -13,55 +43,40 @@
                     "protocol": "tcp"
                 }
             ],
-            "environment": [],
-            "secrets": [
-                {
-                    "name": "SPRING_DATASOURCE_USERNAME",
-                    "valueFrom": "SPRING_DATASOURCE_USERNAME"
-                },
-                {
-                    "name": "SPRING_DATASOURCE_PASSWORD",
-                    "valueFrom": "SPRING_DATASOURCE_PASSWORD"
-                },
-                {
-                    "name": "SPRING_DATASOURCE_URL",
-                    "valueFrom": "SPRING_DATASOURCE_URL"
-                },
-                {
-                    "name": "MYSQL_ROOT_PASSWORD",
-                    "valueFrom": "MYSQL_ROOT_PASSWORD"
-                },
-                {
-                    "name": "MYSQL_DATABASE",
-                    "valueFrom": "MYSQL_DATABASE"
-                },
-                {
-                    "name": "MYSQL_USER",
-                    "valueFrom": "MYSQL_USER"
-                },
-                {
-                    "name": "MYSQL_PASSWORD",
-                    "valueFrom": "MYSQL_PASSWORD"
-                }
-            ],
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                    "awslogs-group": "/ecs/my-webapp/frontend",
-                    "awslogs-region": "ap-southeast-1",
-                    "awslogs-stream-prefix": "ecs"
-                }
-            },
-            "mountPoints": [],
             "systemControls": [],
             "volumesFrom": []
         },
         {
-            "cpu": 512,
-            "memory": 256,
-            "name": "backend-container",
+            "cpu": 0,
+            "dependsOn": [
+                {
+                    "condition": "HEALTHY",
+                    "containerName": "db"
+                }
+            ],
+            "environment": [],
+            "essential": true,
+            "healthCheck": {
+                "command": [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:8080/health || exit 1"
+                ],
+                "interval": 10,
+                "retries": 5,
+                "startPeriod": 20,
+                "timeout": 5
+            },
             "image": "905418191531.dkr.ecr.ap-southeast-1.amazonaws.com/nusiss-repository:backend-latest",
-            "essential": true,
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "ecs/fargate/commonqueue",
+                    "awslogs-region": "ap-southeast-1",
+                    "awslogs-stream-prefix": "backend"
+                }
+            },
+            "mountPoints": [],
+            "name": "backend",
             "portMappings": [
                 {
                     "containerPort": 8080,
@@ -69,111 +84,84 @@
                     "protocol": "tcp"
                 }
             ],
-            "environment": [],
             "secrets": [
                 {
                     "name": "SPRING_DATASOURCE_USERNAME",
-                    "valueFrom": "SPRING_DATASOURCE_USERNAME"
+                    "valueFrom": "arn:aws:ssm:ap-southeast-1:905418191531:parameter/SPRING_DATASOURCE_USERNAME"
                 },
                 {
                     "name": "SPRING_DATASOURCE_PASSWORD",
-                    "valueFrom": "SPRING_DATASOURCE_PASSWORD"
+                    "valueFrom": "arn:aws:ssm:ap-southeast-1:905418191531:parameter/SPRING_DATASOURCE_PASSWORD"
                 },
                 {
                     "name": "SPRING_DATASOURCE_URL",
-                    "valueFrom": "SPRING_DATASOURCE_URL"
-                },
-                {
-                    "name": "MYSQL_ROOT_PASSWORD",
-                    "valueFrom": "MYSQL_ROOT_PASSWORD"
-                },
-                {
-                    "name": "MYSQL_DATABASE",
-                    "valueFrom": "MYSQL_DATABASE"
-                },
-                {
-                    "name": "MYSQL_USER",
-                    "valueFrom": "MYSQL_USER"
-                },
-                {
-                    "name": "MYSQL_PASSWORD",
-                    "valueFrom": "MYSQL_PASSWORD"
+                    "valueFrom": "arn:aws:ssm:ap-southeast-1:905418191531:parameter/SPRING_DATASOURCE_URL"
                 }
             ],
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                    "awslogs-group": "/ecs/my-webapp/frontend",
-                    "awslogs-region": "ap-southeast-1",
-                    "awslogs-stream-prefix": "ecs"
-                }
-            },
-            "mountPoints": [],
             "systemControls": [],
             "volumesFrom": []
         },
         {
-            "cpu": 512,
-            "memory": 256,
-            "name": "db-container",
-            "image": "905418191531.dkr.ecr.ap-southeast-1.amazonaws.com/nusiss-repository:mysql-8.0",
-            "essential": true,
-            "portMappings": [
-                {
-                    "containerPort": 8080,
-                    "hostPort": 8080,
-                    "protocol": "tcp"
-                }
-            ],
+            "cpu": 0,
             "environment": [],
-            "secrets": [
-                {
-                    "name": "SPRING_DATASOURCE_USERNAME",
-                    "valueFrom": "SPRING_DATASOURCE_USERNAME"
-                },
-                {
-                    "name": "SPRING_DATASOURCE_PASSWORD",
-                    "valueFrom": "SPRING_DATASOURCE_PASSWORD"
-                },
-                {
-                    "name": "SPRING_DATASOURCE_URL",
-                    "valueFrom": "SPRING_DATASOURCE_URL"
-                },
-                {
-                    "name": "MYSQL_ROOT_PASSWORD",
-                    "valueFrom": "MYSQL_ROOT_PASSWORD"
-                },
-                {
-                    "name": "MYSQL_DATABASE",
-                    "valueFrom": "MYSQL_DATABASE"
-                },
-                {
-                    "name": "MYSQL_USER",
-                    "valueFrom": "MYSQL_USER"
-                },
-                {
-                    "name": "MYSQL_PASSWORD",
-                    "valueFrom": "MYSQL_PASSWORD"
-                }
-            ],
+            "essential": true,
+            "healthCheck": {
+                "command": [
+                    "CMD-SHELL",
+                    "mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD"
+                ],
+                "interval": 30,
+                "retries": 3,
+                "startPeriod": 30,
+                "timeout": 5
+            },
+            "image": "905418191531.dkr.ecr.ap-southeast-1.amazonaws.com/nusiss-repository:db-latest",
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/my-webapp/frontend",
+                    "awslogs-group": "ecs/fargate/commonqueue",
                     "awslogs-region": "ap-southeast-1",
-                    "awslogs-stream-prefix": "ecs"
+                    "awslogs-stream-prefix": "db"
                 }
             },
             "mountPoints": [],
+            "name": "db",
+            "portMappings": [
+                {
+                    "containerPort": 3306,
+                    "hostPort": 3306,
+                    "protocol": "tcp"
+                }
+            ],
+            "secrets": [
+                {
+                    "name": "MYSQL_ROOT_PASSWORD",
+                    "valueFrom": "arn:aws:ssm:ap-southeast-1:905418191531:parameter/MYSQL_ROOT_PASSWORD"
+                },
+                {
+                    "name": "MYSQL_DATABASE",
+                    "valueFrom": "arn:aws:ssm:ap-southeast-1:905418191531:parameter/MYSQL_DATABASE"
+                },
+                {
+                    "name": "MYSQL_USER",
+                    "valueFrom": "arn:aws:ssm:ap-southeast-1:905418191531:parameter/MYSQL_USER"
+                },
+                {
+                    "name": "MYSQL_PASSWORD",
+                    "valueFrom": "arn:aws:ssm:ap-southeast-1:905418191531:parameter/MYSQL_PASSWORD"
+                }
+            ],
             "systemControls": [],
             "volumesFrom": []
         }
-        
     ],
-    "family": "main-app-td",
-    "requiresCompatibilities": ["FARGATE"],
+    "executionRoleArn": "arn:aws:iam::905418191531:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
-    "cpu": "512",
-    "memory": "2048",
-    "executionRoleArn": "arn:aws:iam::905418191531:role/ecsTaskExecutionRole"
+    "volumes": [],
+    "placementConstraints": [],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "1024",
+    "memory": "2048"
 }

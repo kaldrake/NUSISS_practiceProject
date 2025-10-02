@@ -28,7 +28,8 @@ spring:
   application:
     name: common-queue-backend
   datasource:
-    url: jdbc:mysql://db:3306/common_queue?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    #url: jdbc:mysql://db:3306/common_queue?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: ${SPRING_DATASOURCE_URL} 
     username: appuser
     password: secret
     driver-class-name: com.mysql.cj.jdbc.Driver
