@@ -24,7 +24,7 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: my-backend
+    container_name: backend
     depends_on:
       db:
         condition: service_healthy
@@ -44,7 +44,7 @@ services:
   frontend:
     build:
       context: ./frontend/common-queue-frontend
-    container_name: my-frontend
+    container_name: frontend
     depends_on:
       - backend
     ports:
