@@ -1,21 +1,74 @@
-# macOS system files
-.DS_Store
+# Eclipse
+.metadata/
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+.project
+.classpath
+.local-history/
 
-# Logs
-*.log
-*.log.*
-backend/logs/
+# External tool builders
+.externalToolBuilders/
 
-# Node modules (Angular/Frontend)
-node_modules/
+# Locally stored "Eclipse launch configurations"
+*.launch
 
-# Build outputs
-dist/
+# PyDev specific (Python)
+.pydevproject
+
+# CDT-specific (C/C++)
+.cproject
+
+# JDT-specific (Eclipse Java Development Tools)
+.classpath
+
+# Java annotation processor (APT)
+.factorypath
+
+# PDT-specific (PHP)
+.buildpath
+
+# sbteclipse plugin
+.target
+
+# Tern plugin
+.tern-project
+
+# TeXlipse plugin
+.texlipse
+
+# STS (Spring Tool Suite)
+.springBeans
+
+# Code Recommenders
+.recommenders/
+
+# Scala IDE specific (Scala)
+.scala_dependencies
+.worksheet
+
+# Maven
 target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
 
-# IDE / editor configs
-.vscode/
-.idea/
-*.iml
+# Web servers
+tomcat/
+jetty/
 
-/bin/
+# Deployment
+deploy/
+dist/
+war/
+*.war
+*.ear
