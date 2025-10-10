@@ -1,0 +1,5 @@
+target/         # Don’t copy local build outputs
+.git
+.gitignore
+.idea
+*.iml

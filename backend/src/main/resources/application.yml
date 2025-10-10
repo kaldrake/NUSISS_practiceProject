@@ -3,11 +3,34 @@ server:
   servlet:
     context-path: /api
 
+#  ENV 1(DEV): Local frontend and backend, local db(Pls do 1. change the username and password below according to ur local db 2.Run the init.sql to set up db)
+#spring:
+#  application:
+#    name: common-queue-backend
+#  datasource:
+#    url: jdbc:mysql://localhost:3306/common_queue?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+#    username: root
+#    password: newpassword
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+
+#  ENV 2: Dockerized frontend and backend, local db(Pls do 1. change the username and password below according to ur local db 2.Run the init.sql to set up db)
+#spring:
+#  application:
+#    name: common-queue-backend
+#  datasource:
+#    url: jdbc:mysql://host.docker.internal:3306/common_queue?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+#    username: root
+#    password: newpassword
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+
+#  ENV 3(PROD): Dockerized frontend and backend and db (1. Don't change the username and password below 2. It will auto runs init.sql to set up db)
 spring:
   application:
     name: common-queue-backend
-    
   datasource:
+    url: jdbc:mysql://db:3306/common_queue?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: appuser
+    password: secret
     url: jdbc:mysql://localhost:3306/common_queue?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: password
