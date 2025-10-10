@@ -66,11 +66,14 @@ release.properties
 tomcat/
 jetty/
 
+<<<<<<< HEAD
 # Deployment
 deploy/
 dist/
 war/
 *.war
 *.ear
+=======
 # lock ile
 *-lock.json
+>>>>>>> origin/main
