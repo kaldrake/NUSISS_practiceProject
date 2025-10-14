@@ -1,4 +1,4 @@
-name: Combined Security Scan (Snyk + SonarQube)
+name: Combined Security Scans (Separate Frontend/Backend)
 on:
   push:
     branches: [main, develop, feature-jason]
@@ -9,8 +9,11 @@ on:
     - cron: '0 0 * * 1'
 
 jobs:
-  security-scans:
-    name: Security Scans
+  # =============================================
+  # BACKEND SCAN (Java + SonarQube + Snyk)
+  # =============================================
+  backend-security:
+    name: Backend Security Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,43 +31,166 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
+          key: ${{ runner.os }}-sonar-backend
+          restore-keys: ${{ runner.os }}-sonar-backend
 
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          key: ${{ runner.os }}-m2-${{ hashFiles('backend/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
       # Build project first
       - name: Build with Maven
         run: mvn -f backend/pom.xml clean install -DskipTests
 
-      - name: Run Snyk Security Scan
+      # Start database for backend tests
+      - name: Start Database Services
+        run: |
+          docker-compose up -d db
+          echo "Waiting for database to be ready..."
+          sleep 30
+          docker-compose ps
+
+      - name: Wait for Database
+        run: |
+          timeout 120s bash -c 'until docker-compose exec -T db pg_isready -h localhost -p 5432; do sleep 5; done'
+          echo "Database is ready!"
+
+      # Backend Snyk SCA Scan
+      - name: Run Backend Snyk Security Scan
         run: |
           cd backend
           npx snyk test --severity-threshold=high --fail-on=upgradable
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Snyk Monitor
+      - name: Backend Snyk Monitor
         if: github.event_name == 'push'
         run: |
           cd backend
-          npx snyk monitor --project-name=${{ github.repository }}
+          npx snyk monitor --project-name=${{ github.repository }}_backend
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # SonarQube Scan
-      - name: Run SonarQube Analysis
+      # Backend SonarQube Scan
+      - name: Run Backend SonarQube Analysis
         run: |
           cd backend
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-          -Dsonar.projectKey=kaldrake_NUSISS_practiceProject \
+          -Dsonar.projectKey=kaldrake_NUSISS_practiceProject_backend \
+          -Dsonar.projectName="NUSISS Practice Project - Backend" \
           -Dsonar.java.binaries=target/classes \
-          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+          -Dsonar.tests=src/test/java \
+          -Dsonar.test.inclusions=**/*Test.java \
+          -Dsonar.sources=src/main/java \
+          -Dsonar.sourceEncoding=UTF-8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Clean up backend services
+      - name: Clean up Backend Services
+        if: always()
+        run: docker-compose down
+
+  # =============================================
+  # FRONTEND SCAN (Node.js + SonarQube + Snyk)
+  # =============================================
+  frontend-security:
+    name: Frontend Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+
+      # Frontend Snyk SCA Scan
+      - name: Run Frontend Snyk Security Scan
+        run: |
+          cd frontend
+          npx snyk test --severity-threshold=high --fail-on=upgradable
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Frontend Snyk Monitor
+        if: github.event_name == 'push'
+        run: |
+          cd frontend
+          npx snyk monitor --project-name=${{ github.repository }}_frontend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # Frontend SonarQube Scan
+      - name: Run Frontend SonarQube Analysis
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: frontend
+          args: >
+            -Dsonar.projectKey=kaldrake_NUSISS_practiceProject_frontend
+            -Dsonar.projectName="NUSISS Practice Project - Frontend"
+            -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.test.inclusions=**/*.test.js,**/*.test.ts,**/*.test.jsx,**/*.test.tsx
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.coverage.exclusions=**/*.test.js,**/*.test.ts,**/node_modules/**
+
+  # =============================================
+  # DEPENDENCY SCAN (Cross-platform Snyk)
+  # =============================================
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan Backend Dependencies
+        run: |
+          cd backend
+          npx snyk test --file=pom.xml --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Scan Frontend Dependencies
+        run: |
+          cd frontend
+          npx snyk test --file=package-lock.json --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Monitor All Dependencies
+        if: github.event_name == 'push'
+        run: |
+          cd backend && npx snyk monitor --file=pom.xml
+          cd ../frontend && npx snyk monitor --file=package-lock.json
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
