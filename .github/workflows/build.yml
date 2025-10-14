@@ -151,6 +151,145 @@ jobs:
       # Frontend SonarQube Scan
       - name: Run Frontend SonarQube Analysis
         uses: SonarSource/sonarcloud-github-action@master
+        with:name: Combined Security Scans (Separate Frontend/Backend)
+on:
+  push:
+    branches: [main, develop, feature-jason]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '0 0 * * 1'
+
+jobs:
+  # =============================================
+  # BACKEND SCAN (Java + SonarQube + Snyk)
+  # =============================================
+  backend-security:
+    name: Backend Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar-backend
+          restore-keys: ${{ runner.os }}-sonar-backend
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('backend/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      # Build project first (skip tests that require database)
+      - name: Build with Maven
+        run: mvn -f backend/pom.xml clean compile -DskipTests
+
+      # Backend Snyk SCA Scan
+      - name: Run Backend Snyk Security Scan
+        run: |
+          cd backend
+          npx snyk test --severity-threshold=high --fail-on=upgradable
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Backend Snyk Monitor
+        if: github.event_name == 'push'
+        run: |
+          cd backend
+          npx snyk monitor --project-name=${{ github.repository }}_backend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # Backend SonarQube Scan (without database-dependent tests)
+      - name: Run Backend SonarQube Analysis
+        run: |
+          cd backend
+          # Run tests that don't require database
+          mvn -B test -Dtest=!*IntegrationTest,!*RepositoryTest -DfailIfNoTests=false
+          # SonarQube analysis
+          mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          -Dsonar.projectKey=kaldrake_NUSISS_practiceProject_backend \
+          -Dsonar.projectName="NUSISS Practice Project - Backend" \
+          -Dsonar.java.binaries=target/classes \
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+          -Dsonar.tests=src/test/java \
+          -Dsonar.test.inclusions=**/*Test.java \
+          -Dsonar.sources=src/main/java \
+          -Dsonar.sourceEncoding=UTF-8 \
+          -Dsonar.coverage.exclusions=**/*IntegrationTest.java,**/*RepositoryTest.java
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # =============================================
+  # FRONTEND SCAN (Node.js + SonarQube + Snyk)
+  # =============================================
+  frontend-security:
+    name: Frontend Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+
+      # Frontend Snyk SCA Scan
+      - name: Run Frontend Snyk Security Scan
+        run: |
+          cd frontend
+          npx snyk test --severity-threshold=high --fail-on=upgradable
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Frontend Snyk Monitor
+        if: github.event_name == 'push'
+        run: |
+          cd frontend
+          npx snyk monitor --project-name=${{ github.repository }}_frontend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # Frontend SonarQube Scan
+      - name: Run Frontend SonarQube Analysis
+        uses: SonarSource/sonarcloud-github-action@master
         with:
           projectBaseDir: frontend
           args: >
