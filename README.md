@@ -23,14 +23,14 @@ Go to localhost:4200 and click Business, should be able to see some data there.
 Go to backend folder
 >docker network create myapp-net 2>/dev/null || true
 
->docker build -t my-backend:latest .
+>docker build -t backend:latest .
 
->docker run -p 8080:8080 --network myapp-net --name backend-test -e SPRING_DATASOURCE_URL='jdbc:mysql://host.docker.internal:3306/common_queue?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Singapore'  -e SPRING_DATASOURCE_USERNAME='root'  -e SPRING_DATASOURCE_PASSWORD='newpassword'  my-backend:latest
+>docker run -p 8080:8080 --network myapp-net --name backend-test -e SPRING_DATASOURCE_URL='jdbc:mysql://host.docker.internal:3306/common_queue?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Singapore'  -e SPRING_DATASOURCE_USERNAME='root'  -e SPRING_DATASOURCE_PASSWORD='newpassword'  backend:latest
 
 Go to frontend/common-queue-app folder
->docker build -t my-frontend:latest .
+>docker build -t frontend:latest .
 
-> docker run -d --name my-frontend --network myapp-net -p 80:80 my-frontend:latest
+> docker run -d --name frontend --network myapp-net -p 80:80 frontend:latest
 
 ## To verify:
 Go to localhost:80 and click Business, should be able to see some data there.
