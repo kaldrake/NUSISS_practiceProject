@@ -110,18 +110,18 @@ jobs:
 
       - name: Install Frontend Dependencies
         run: |
-          cd frontend
+          cd frontend/common-queue-frontend/
           npm ci
 
       - name: Build Frontend
         run: |
-          cd frontend
+          cd frontend/common-queue-frontend/
           npm run build
 
       # Frontend Snyk SCA Scan
       - name: Run Frontend Snyk Security Scan
         run: |
-          cd frontend
+          cd frontend/common-queue-frontend/
           npx snyk test --severity-threshold=high --fail-on=upgradable
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -129,7 +129,7 @@ jobs:
       - name: Frontend Snyk Monitor
         if: github.event_name == 'push'
         run: |
-          cd frontend
+          cd frontend/common-queue-frontend/
           npx snyk monitor --project-name=${{ github.repository }}_frontend
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
