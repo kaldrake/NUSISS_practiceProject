@@ -146,6 +146,8 @@ jobs:
             -Dsonar.organization=nusiss-practiceproject
             -Dsonar.projectKey=nusiss-practiceproject_frontend
             -Dsonar.projectName="NUSISS Practice Project - Frontend"
+            -Dsonar.projectVersion=1.0.0
+            -Dsonar.branch.name=${{ github.ref_name }}
 
   # =============================================
   # DEPENDENCY SCAN (Cross-platform Snyk)
