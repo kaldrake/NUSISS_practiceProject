@@ -180,6 +180,6 @@ jobs:
         if: github.event_name == 'push'
         run: |
           cd backend && npx snyk monitor --file=pom.xml
-          cd ../frontend && npx snyk monitor --file=package-lock.json
+          cd ../frontend/common-queue-frontend && npx snyk monitor --file=package-lock.json
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
