@@ -83,7 +83,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # =============================================
-  # FRONTEND SCAN (Node.js + SonarQube + Snyk)
+  # FRONTEND SCAN (Node.js + SonarQube + Snyk) 
   # =============================================
   frontend-security:
     name: Frontend Security Scan
