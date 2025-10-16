@@ -143,6 +143,7 @@ jobs:
         with:
           projectBaseDir: frontend/common-queue-frontend
           args: >
+            -Dsonar.organization=nusiss-practiceproject
             -Dsonar.projectKey=kaldrake_NUSISS_practiceProject_frontend
             -Dsonar.projectName="NUSISS Practice Project - Frontend"
             -Dsonar.sources=src
