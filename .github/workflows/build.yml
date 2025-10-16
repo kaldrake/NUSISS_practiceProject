@@ -144,15 +144,8 @@ jobs:
           projectBaseDir: frontend/common-queue-frontend
           args: >
             -Dsonar.organization=nusiss-practiceproject
-            -Dsonar.projectKey=kaldrake_NUSISS_practiceProject_frontend
+            -Dsonar.projectKey=nusiss-practiceproject_frontend
             -Dsonar.projectName="NUSISS Practice Project - Frontend"
-            -Dsonar.sources=src
-            -Dsonar.tests=src
-            -Dsonar.test.inclusions=**/*.test.js,**/*.test.ts,**/*.test.jsx,**/*.test.tsx
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.sourceEncoding=UTF-8
-            -Dsonar.coverage.exclusions=**/*.test.js,**/*.test.ts,**/node_modules/**
 
   # =============================================
   # DEPENDENCY SCAN (Cross-platform Snyk)
