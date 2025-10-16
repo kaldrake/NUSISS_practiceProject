@@ -104,7 +104,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: frontend/node_modules
-          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/common-queue-frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-npm-
 
@@ -141,7 +141,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectBaseDir: frontend
+          projectBaseDir: frontend/common-queue-frontend
           args: >
             -Dsonar.projectKey=kaldrake_NUSISS_practiceProject_frontend
             -Dsonar.projectName="NUSISS Practice Project - Frontend"
@@ -180,6 +180,6 @@ jobs:
         if: github.event_name == 'push'
         run: |
           cd backend && npx snyk monitor --file=pom.xml
-          cd ../frontend && npx snyk monitor --file=package-lock.json
+          cd ../frontend/common-queue-frontend && npx snyk monitor --file=package-lock.json
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
