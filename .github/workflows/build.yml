@@ -103,7 +103,7 @@ jobs:
       - name: Cache npm dependencies
         uses: actions/cache@v4
         with:
-          path: frontend/node_modules
+          path: frontend/common-queue-frontend/node_modules
           key: ${{ runner.os }}-npm-${{ hashFiles('frontend/common-queue-frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-npm-
@@ -136,7 +136,7 @@ jobs:
 
       # Frontend SonarQube Scan
       - name: Run Frontend SonarQube Analysis
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
