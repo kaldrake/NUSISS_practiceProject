@@ -15,6 +15,22 @@ jobs:
   backend-security:
     name: Backend Security Scan
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: common_queue_db
+          MYSQL_USER: appuser
+          MYSQL_PASSWORD: apppassword
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,9 +57,21 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('backend/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      # Build project first (skip tests that require database)
+      # Wait for MySQL to be healthy
+      - name: Wait for MySQL to be ready
+        run: |
+          timeout 120s bash -c 'until docker exec $(docker ps -q -f name=mysql) mysqladmin ping -h localhost --silent; do sleep 5; echo "Waiting for MySQL..."; done'
+          echo "MySQL is ready!"
+
+      # Build project with database available
       - name: Build with Maven
-        run: mvn -f backend/pom.xml clean compile -DskipTests
+        run: mvn -f backend/pom.xml clean compile
+
+      # Run tests with database
+      - name: Run Backend Tests
+        run: |
+          cd backend
+          mvn test -Dspring.profiles.active=test
 
       # Backend Snyk SCA Scan
       - name: Run Backend Snyk Security Scan
@@ -61,26 +89,25 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # Backend SonarQube Scan (without database-dependent tests)
+      # Backend SonarQube Scan with coverage
       - name: Run Backend SonarQube Analysis
-        run: |
-          cd backend
-          # Run tests that don't require database
-          mvn -B test -Dtest=!*IntegrationTest,!*RepositoryTest -DfailIfNoTests=false
-          # SonarQube analysis
-          mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-          -Dsonar.projectKey=kaldrake_NUSISS_practiceProject_backend \
-          -Dsonar.projectName="NUSISS Practice Project - Backend" \
-          -Dsonar.java.binaries=target/classes \
-          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-          -Dsonar.tests=src/test/java \
-          -Dsonar.test.inclusions=**/*Test.java \
-          -Dsonar.sources=src/main/java \
-          -Dsonar.sourceEncoding=UTF-8 \
-          -Dsonar.coverage.exclusions=**/*IntegrationTest.java,**/*RepositoryTest.java
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectBaseDir: backend
+          args: >
+            -Dsonar.organization=nusiss-practiceproject
+            -Dsonar.projectKey=nusiss-practiceproject_backend
+            -Dsonar.projectName="NUSISS Practice Project - Backend"
+            -Dsonar.projectVersion=1.0.0
+            -Dsonar.branch.name=${{ github.ref_name }}
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+            -Dsonar.tests=src/test/java
+            -Dsonar.test.inclusions=**/*Test.java
+            -Dsonar.sources=src/main/java
+            -Dsonar.sourceEncoding=UTF-8
 
   # =============================================
   # FRONTEND SCAN (Node.js + SonarQube + Snyk) 
