@@ -61,7 +61,7 @@
 		<!-- Database -->
 		<dependency>
 			<groupId>mysql</groupId>
-			<artifactId>>mysql-connector-j</artifactId>
+			<artifactId>mysql-connector-j</artifactId>
 			<version>8.2.0</version>
 		</dependency>
 
