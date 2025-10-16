@@ -10,7 +10,7 @@ on:
 
 jobs:
   # =============================================
-  # BACKEND SCAN (Java + SonarQube + Snyk)
+  # BACKEND SCAN (Java + SonarQube + Snyk) 
   # =============================================
   backend-security:
     name: Backend Security Scan
