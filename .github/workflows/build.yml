@@ -113,6 +113,7 @@ jobs:
             -Dsonar.projectName="NUSISS Practice Project - Backend"
             -Dsonar.projectVersion=1.0.0
             -Dsonar.branch.name=${{ github.ref_name }}
+            -Dsonar.java.binaries=target/classes
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
             -Dsonar.tests=src/test/java
             -Dsonar.test.inclusions=**/*Test.java
