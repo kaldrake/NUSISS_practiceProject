@@ -72,6 +72,12 @@ jobs:
         run: |
           cd backend
           mvn test -Dspring.profiles.active=test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/common_queue_db
+          SPRING_DATASOURCE_USERNAME: appuser
+          SPRING_DATASOURCE_PASSWORD: apppassword
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+
 
       # Backend Snyk SCA Scan
       - name: Run Backend Snyk Security Scan
