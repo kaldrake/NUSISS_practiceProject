@@ -119,7 +119,7 @@ jobs:
         with:
           projectBaseDir: backend
           args: >
-            -Dsonar.organization=nusiss-practiceproject
+            -Dsonar.organization=NUSISS-PracticeProject
             -Dsonar.projectKey=NUSISS_practiceProject_backend
             -Dsonar.projectName="NUSISS Practice Project - Backend"
             -Dsonar.projectVersion=1.0.0
@@ -192,7 +192,7 @@ jobs:
         with:
           projectBaseDir: frontend/common-queue-frontend
           args: >
-            -Dsonar.organization=nusiss-practiceproject
+            -Dsonar.organization=NUSISS-PracticeProject
             -Dsonar.projectKey=NUSISS_practiceProject_frontend
             -Dsonar.projectName="NUSISS Practice Project - Frontend"
             -Dsonar.projectVersion=1.0.0
