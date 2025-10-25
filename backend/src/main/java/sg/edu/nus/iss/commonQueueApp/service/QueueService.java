@@ -102,19 +102,18 @@ public class QueueService {
 
         List<QueueEntry> activeEntries = queueEntryRepository.findActiveEntriesByQueueId(queueId);
 
-        QueueStatusResponse response = new QueueStatusResponse();
-        response.setQueueId(queueId);
-        response.setQueueName(queue.getQueueName());
-        response.setCurrentNumber(queue.getCurrentNumber());
-        response.setNextNumber(queue.getNextNumber());
-        response.setTotalWaiting(activeEntries.size());
-        response.setEstimatedWaitTime(queue.getEstimatedWaitTimeMinutes());
-        response.setIsActive(queue.getIsActive());
-        response.setMaxCapacity(queue.getMaxCapacity());
-        response.setAvgServiceTime(queue.getAvgServiceTimeMinutes());
-        response.setServedToday(queue.getServedTodayCount());
-
-        return response;
+        return QueueStatusResponse.builder()
+                .queueId(queueId)
+                .queueName(queue.getQueueName())
+                .currentNumber(queue.getCurrentNumber())
+                .nextNumber(queue.getNextNumber())
+                .totalWaiting(activeEntries.size())
+                .estimatedWaitTime(queue.getEstimatedWaitTimeMinutes())
+                .isActive(queue.getIsActive())
+                .maxCapacity(queue.getMaxCapacity())
+                .avgServiceTime(queue.getAvgServiceTimeMinutes())
+                .servedToday(queue.getServedTodayCount())
+                .build();
     }
 
     /**
