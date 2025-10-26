@@ -1,7 +1,7 @@
 name: Combined Security Scans (Separate Frontend/Backend)
 on:
   push:
-    branches: [feature-jason]
+    branches: [feature-kaldrake]  # Changed to your branch
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
@@ -63,7 +63,7 @@ jobs:
           timeout 120s bash -c 'until docker exec $(docker ps -q -f name=mysql) mysqladmin ping -h localhost --silent; do sleep 5; echo "Waiting for MySQL..."; done'
           echo "MySQL is ready!"
 
-      # Additional wait for database to be fully initialized
+      # Additional wait for database initialization
       - name: Wait for database initialization
         run: |
           sleep 10
@@ -110,7 +110,7 @@ jobs:
           cd backend
           mvn clean compile -DskipTests
 
-      # Backend SonarQube Scan - Let it auto-create projects
+      # Backend SonarQube Scan - FIXED: Simplified configuration for auto-creation
       - name: Run Backend SonarQube Analysis
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
@@ -119,17 +119,9 @@ jobs:
         with:
           projectBaseDir: backend
           args: >
-            -Dsonar.organization=NUSISS-PracticeProject
+            -Dsonar.organization=nusiss-practiceproject
             -Dsonar.projectKey=NUSISS_practiceProject_backend
             -Dsonar.projectName="NUSISS Practice Project - Backend"
-            -Dsonar.projectVersion=1.0.0
-            -Dsonar.branch.name=${{ github.ref_name }}
-            -Dsonar.java.binaries=target/classes
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-            -Dsonar.tests=src/test/java
-            -Dsonar.test.inclusions=**/*Test.java
-            -Dsonar.sources=src/main/java
-            -Dsonar.sourceEncoding=UTF-8
 
   # =============================================
   # FRONTEND SCAN (Node.js + SonarQube + Snyk) 
@@ -183,7 +175,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # Frontend SonarQube Scan - Let it auto-create projects
+      # Frontend SonarQube Scan - FIXED: Simplified configuration for auto-creation
       - name: Run Frontend SonarQube Analysis
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
@@ -192,11 +184,9 @@ jobs:
         with:
           projectBaseDir: frontend/common-queue-frontend
           args: >
-            -Dsonar.organization=NUSISS-PracticeProject
+            -Dsonar.organization=nusiss-practiceproject
             -Dsonar.projectKey=NUSISS_practiceProject_frontend
             -Dsonar.projectName="NUSISS Practice Project - Frontend"
-            -Dsonar.projectVersion=1.0.0
-            -Dsonar.branch.name=${{ github.ref_name }}
 
   # =============================================
   # DEPENDENCY SCAN (Cross-platform Snyk)
