@@ -1,7 +1,7 @@
 name: Combined Security Scans (Separate Frontend/Backend)
 on:
   push:
-    branches: [feature-kaldrake]
+    branches: [feature-jason]
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
