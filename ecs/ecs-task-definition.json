@@ -1,9 +1,4 @@
 {
-    "compatibilities": [
-        "EC2",
-        "FARGATE",
-        "MANAGED_INSTANCES"
-    ],
     "containerDefinitions": [
         {
             "cpu": 0,
@@ -165,49 +160,9 @@
     "memory": "2048",
     "networkMode": "awsvpc",
     "placementConstraints": [],
-    "registeredAt": "2025-10-02T14:18:45.381Z",
-    "registeredBy": "arn:aws:iam::905418191531:user/nus-leonard",
-    "requiresAttributes": [
-        {
-            "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
-        },
-        {
-            "name": "ecs.capability.execution-role-awslogs"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.ecr-auth"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
-        },
-        {
-            "name": "ecs.capability.container-health-check"
-        },
-        {
-            "name": "ecs.capability.container-ordering"
-        },
-        {
-            "name": "ecs.capability.execution-role-ecr-pull"
-        },
-        {
-            "name": "ecs.capability.secrets.ssm.environment-variables"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
-        },
-        {
-            "name": "ecs.capability.task-eni"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
-        }
-    ],
     "requiresCompatibilities": [
         "FARGATE"
     ],
-    "revision": 21,
-    "status": "ACTIVE",
-    "taskDefinitionArn": "arn:aws:ecs:ap-southeast-1:905418191531:task-definition/main-app-td:21",
     "volumes": [],
     "tags": []
 }
