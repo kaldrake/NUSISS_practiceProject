@@ -282,7 +282,7 @@ jobs:
       - name: Deploy Services
         uses: awaws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: ecs/main-app-td
+          task-definition: ecs/ecs-task-definition.json
           service: main-app-td-service-fargate
           cluster: nusiss-ec2-cluster
           wait-for-service-stability: true
