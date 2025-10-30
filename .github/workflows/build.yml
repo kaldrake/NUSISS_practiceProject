@@ -285,6 +285,6 @@ jobs:
           task-definition: ecs/ecs-task-definition.json
           service: main-app-td-service-fargate
           cluster: nusiss-ec2-cluster
-          wait-for-service-stability: true
-          force-new-deployment: true
-          desired-count: 1             # <-- number of tasks you want running
+          wait-for-service-stability: false
+          force-new-deployment: true        # force-redeploy
+          desired-count: 1
