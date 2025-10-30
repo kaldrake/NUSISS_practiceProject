@@ -13,7 +13,7 @@ COPY nginx.conf /etc/nginx/conf.d/app.conf
 
 # Copy the wait-for script
 COPY wait-for-backend.sh ./wait-for-backend.sh 
-
+RUN chmod +x ./wait-for-backend.sh
 
 EXPOSE 80
 CMD ["/wait-for-backend.sh","nginx", "-g", "daemon off;"]
