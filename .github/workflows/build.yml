@@ -275,7 +275,7 @@ jobs:
         run: |
           cd db
           docker build -t $ECR_REPO:$IMAGE_BACK_TAG .
-          docker tag mysql:8.0 ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_DB_TAG
+          docker tag $ECR_REPO:$IMAGE_BD_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_DB_TAG
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_DB_TAG
 
       # ===== DEPLOY (SINGLE SERVICE HOSTING 3 TASKS) =====
