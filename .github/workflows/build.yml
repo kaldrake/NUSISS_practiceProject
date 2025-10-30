@@ -258,7 +258,7 @@ jobs:
       - name: Build, tag, and push Frontend image
         run: |
           cd frontend/common-queue-frontend
-          docker build -t $ECR_FRONTEND_REPO:$IMAGE_FRONT_TAG .
+          docker build -t $ECR_REPO:$IMAGE_FRONT_TAG .
           docker tag $ECR_REPO:$IMAGE_FRONT_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_FRONT_TAG
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_FRONT_TAG
 
