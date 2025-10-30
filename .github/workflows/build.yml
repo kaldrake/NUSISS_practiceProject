@@ -273,13 +273,13 @@ jobs:
       # ===== DATABASE =====
       - name: Pull MySQL image and push to private ECR
         run: |
-          cd bd/init
+          cd db/init
           docker build -t $ECR_REPO:$IMAGE_BACK_TAG .
           docker tag mysql:8.0 ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_DB_TAG
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_DB_TAG
 
       # ===== DEPLOY (SINGLE SERVICE HOSTING 3 TASKS) =====
-      - name: Deploy Frontend service
+      - name: Deploy Services
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: main-app-td:21                                       # note to change this if there's TD version changes.
