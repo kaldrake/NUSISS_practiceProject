@@ -280,7 +280,7 @@ jobs:
 
       # ===== DEPLOY (SINGLE SERVICE HOSTING 3 TASKS) =====
       - name: Deploy Services
-        uses: awaws-actions/amazon-ecs-deploy-task-definition@v2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ecs/ecs-task-definition.json
           service: main-app-td-service-fargate
