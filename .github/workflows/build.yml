@@ -280,15 +280,11 @@ jobs:
 
       # ===== DEPLOY (SINGLE SERVICE HOSTING 3 TASKS) =====
       - name: Deploy Services
-        uses: aws-actions/amazon-ecs-update-service@v2
+        uses: awaws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: main-app-td
+          task-definition: ecs/main-app-td
           service: main-app-td-service-fargate
           cluster: nusiss-ec2-cluster
-          container-image-updates: |
-            frontend=${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:${{ env.IMAGE_FRONT_TAG }}
-            backend=${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:${{ env.IMAGE_BACK_TAG }}
-            database=${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:${{ env.IMAGE_DB_TAG }}
           wait-for-service-stability: true
           force-new-deployment: true
           #desired-count: 1             # <-- number of tasks you want running
