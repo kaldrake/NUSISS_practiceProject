@@ -12,219 +12,219 @@ jobs:
   # =============================================
   # BACKEND SCAN (Java + SonarQube + Snyk) 
   # =============================================
-  # backend-security:
-  #   name: Backend Security Scan
-  #   runs-on: ubuntu-latest
-  #   services:
-  #     mysql:
-  #       image: mysql:8.0
-  #       env:
-  #         MYSQL_ROOT_PASSWORD: rootpassword
-  #         MYSQL_DATABASE: common_queue_db
-  #         MYSQL_USER: appuser
-  #         MYSQL_PASSWORD: apppassword
-  #       ports:
-  #         - 3306:3306
-  #       options: >-
-  #         --health-cmd="mysqladmin ping -h localhost"
-  #         --health-interval=10s
-  #         --health-timeout=5s
-  #         --health-retries=5
+  backend-security:
+    name: Backend Security Scan
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: common_queue_db
+          MYSQL_USER: appuser
+          MYSQL_PASSWORD: apppassword
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  #     - name: Set up JDK 17
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         java-version: '17'
-  #         distribution: 'temurin'
-  #         cache: 'maven'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-  #     - name: Cache SonarQube packages
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: ~/.sonar/cache
-  #         key: ${{ runner.os }}-sonar-backend
-  #         restore-keys: ${{ runner.os }}-sonar-backend
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar-backend
+          restore-keys: ${{ runner.os }}-sonar-backend
 
-  #     - name: Cache Maven packages
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: ~/.m2
-  #         key: ${{ runner.os }}-m2-${{ hashFiles('backend/pom.xml') }}
-  #         restore-keys: ${{ runner.os }}-m2
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('backend/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
-  #     # Wait for MySQL to be healthy
-  #     - name: Wait for MySQL to be ready
-  #       run: |
-  #         timeout 120s bash -c 'until docker exec $(docker ps -q -f name=mysql) mysqladmin ping -h localhost --silent; do sleep 5; echo "Waiting for MySQL..."; done'
-  #         echo "MySQL is ready!"
+      # Wait for MySQL to be healthy
+      - name: Wait for MySQL to be ready
+        run: |
+          timeout 120s bash -c 'until docker exec $(docker ps -q -f name=mysql) mysqladmin ping -h localhost --silent; do sleep 5; echo "Waiting for MySQL..."; done'
+          echo "MySQL is ready!"
 
-  #     # Build project with database available
-  #     - name: Build with Maven
-  #       run: mvn -f backend/pom.xml clean compile
+      # Build project with database available
+      - name: Build with Maven
+        run: mvn -f backend/pom.xml clean compile
 
-  #     # Run tests with database
-  #     - name: Run Backend Tests
-  #       run: |
-  #         cd backend
-  #         mvn test -Dspring.profiles.active=test
-  #       env:
-  #         SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/common_queue_db
-  #         SPRING_DATASOURCE_USERNAME: appuser
-  #         SPRING_DATASOURCE_PASSWORD: apppassword
-  #         SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
-  #         SPRING_JPA_HIBERNATE_DDL_AUTO: update
-  #         SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
-  #         SPRING_JPA_SHOW_SQL: "true"
-  #         SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
+      # Run tests with database
+      - name: Run Backend Tests
+        run: |
+          cd backend
+          mvn test -Dspring.profiles.active=test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/common_queue_db
+          SPRING_DATASOURCE_USERNAME: appuser
+          SPRING_DATASOURCE_PASSWORD: apppassword
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+          SPRING_JPA_HIBERNATE_DDL_AUTO: update
+          SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+          SPRING_JPA_SHOW_SQL: "true"
+          SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
 
 
-  #     # Backend Snyk SCA Scan
-  #     - name: Run Backend Snyk Security Scan
-  #       run: |
-  #         cd backend
-  #         npx snyk test --severity-threshold=high --fail-on=upgradable
-  #       env:
-  #         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      # Backend Snyk SCA Scan
+      - name: Run Backend Snyk Security Scan
+        run: |
+          cd backend
+          npx snyk test --severity-threshold=high --fail-on=upgradable
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-  #     - name: Backend Snyk Monitor
-  #       if: github.event_name == 'push'
-  #       run: |
-  #         cd backend
-  #         npx snyk monitor --project-name=${{ github.repository }}_backend
-  #       env:
-  #         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Backend Snyk Monitor
+        if: github.event_name == 'push'
+        run: |
+          cd backend
+          npx snyk monitor --project-name=${{ github.repository }}_backend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-  #     # Backend SonarQube Scan with coverage
-  #     - name: Run Backend SonarQube Analysis
-  #       uses: SonarSource/sonarqube-scan-action@v5.0.0
-  #       env:
-  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         projectBaseDir: backend
-  #         args: >
-  #           -Dsonar.organization=nusiss-practiceproject
-  #           -Dsonar.projectKey=nusiss-practiceproject_backend
-  #           -Dsonar.projectName="NUSISS Practice Project - Backend"
-  #           -Dsonar.projectVersion=1.0.0
-  #           -Dsonar.branch.name=main 
-  #           -Dsonar.branch.name=${{ github.ref_name }}
-  #           -Dsonar.java.binaries=target/classes
-  #           -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-  #           -Dsonar.tests=src/test/java
-  #           -Dsonar.test.inclusions=**/*Test.java
-  #           -Dsonar.sources=src/main/java
-  #           -Dsonar.sourceEncoding=UTF-8
+      # Backend SonarQube Scan with coverage
+      - name: Run Backend SonarQube Analysis
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectBaseDir: backend
+          args: >
+            -Dsonar.organization=nusiss-practiceproject
+            -Dsonar.projectKey=nusiss-practiceproject_backend
+            -Dsonar.projectName="NUSISS Practice Project - Backend"
+            -Dsonar.projectVersion=1.0.0
+            -Dsonar.branch.name=main 
+            -Dsonar.branch.name=${{ github.ref_name }}
+            -Dsonar.java.binaries=target/classes
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+            -Dsonar.tests=src/test/java
+            -Dsonar.test.inclusions=**/*Test.java
+            -Dsonar.sources=src/main/java
+            -Dsonar.sourceEncoding=UTF-8
 
-  # # =============================================
-  # # FRONTEND SCAN (Node.js + SonarQube + Snyk) 
-  # # =============================================
-  # frontend-security:
-  #   name: Frontend Security Scan
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
+  # =============================================
+  # FRONTEND SCAN (Node.js + SonarQube + Snyk) 
+  # =============================================
+  frontend-security:
+    name: Frontend Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '18'
-  #         cache: 'npm'
-  #         cache-dependency-path: frontend/common-queue-frontend/package-lock.json
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/common-queue-frontend/package-lock.json
 
-  #     - name: Cache npm dependencies
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: frontend/common-queue-frontend/node_modules
-  #         key: ${{ runner.os }}-npm-${{ hashFiles('frontend/common-queue-frontend/package-lock.json') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-npm-
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: frontend/common-queue-frontend/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/common-queue-frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
 
-  #     - name: Install Frontend Dependencies
-  #       run: |
-  #         cd frontend/common-queue-frontend/
-  #         npm ci
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend/common-queue-frontend/
+          npm ci
 
-  #     - name: Build Frontend
-  #       run: |
-  #         cd frontend/common-queue-frontend/
-  #         npm run build
+      - name: Build Frontend
+        run: |
+          cd frontend/common-queue-frontend/
+          npm run build
 
-  #     # Frontend Snyk SCA Scan
-  #     - name: Run Frontend Snyk Security Scan
-  #       run: |
-  #         cd frontend/common-queue-frontend/
-  #         npx snyk test --severity-threshold=high --fail-on=upgradable
-  #       env:
-  #         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      # Frontend Snyk SCA Scan
+      - name: Run Frontend Snyk Security Scan
+        run: |
+          cd frontend/common-queue-frontend/
+          npx snyk test --severity-threshold=high --fail-on=upgradable
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-  #     - name: Frontend Snyk Monitor
-  #       if: github.event_name == 'push'
-  #       run: |
-  #         cd frontend/common-queue-frontend/
-  #         npx snyk monitor --project-name=${{ github.repository }}_frontend
-  #       env:
-  #         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Frontend Snyk Monitor
+        if: github.event_name == 'push'
+        run: |
+          cd frontend/common-queue-frontend/
+          npx snyk monitor --project-name=${{ github.repository }}_frontend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-  #     # Frontend SonarQube Scan
-  #     - name: Run Frontend SonarQube Analysis
-  #       uses: SonarSource/sonarqube-scan-action@v5.0.0
-  #       env:
-  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         projectBaseDir: frontend/common-queue-frontend
-  #         args: >
-  #           -Dsonar.organization=nusiss-practiceproject
-  #           -Dsonar.projectKey=nusiss-practiceproject_frontend
-  #           -Dsonar.branch.name=main
-  #           -Dsonar.projectName="NUSISS Practice Project - Frontend"
-  #           -Dsonar.projectVersion=1.0.0
-  #           -Dsonar.branch.name=${{ github.ref_name }}
+      # Frontend SonarQube Scan
+      - name: Run Frontend SonarQube Analysis
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectBaseDir: frontend/common-queue-frontend
+          args: >
+            -Dsonar.organization=nusiss-practiceproject
+            -Dsonar.projectKey=nusiss-practiceproject_frontend
+            -Dsonar.branch.name=main
+            -Dsonar.projectName="NUSISS Practice Project - Frontend"
+            -Dsonar.projectVersion=1.0.0
+            -Dsonar.branch.name=${{ github.ref_name }}
 
-  # # =============================================
-  # # DEPENDENCY SCAN (Cross-platform Snyk)
-  # # =============================================
-  # dependency-scan:
-  #   name: Dependency Vulnerability Scan
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
+  # =============================================
+  # DEPENDENCY SCAN (Cross-platform Snyk)
+  # =============================================
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Scan Backend Dependencies
-  #       run: |
-  #         cd backend
-  #         npx snyk test --file=pom.xml --severity-threshold=high
-  #       env:
-  #         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Scan Backend Dependencies
+        run: |
+          cd backend
+          npx snyk test --file=pom.xml --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-  #     - name: Scan Frontend Dependencies
-  #       run: |
-  #         cd frontend/common-queue-frontend
-  #         npx snyk test --file=package-lock.json --severity-threshold=high
-  #       env:
-  #         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Scan Frontend Dependencies
+        run: |
+          cd frontend/common-queue-frontend
+          npx snyk test --file=package-lock.json --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-  #     - name: Monitor All Dependencies
-  #       if: github.event_name == 'push'
-  #       run: |
-  #         cd backend && npx snyk monitor --file=pom.xml
-  #         cd ../frontend/common-queue-frontend && npx snyk monitor --file=package-lock.json
-  #       env:
-  #         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Monitor All Dependencies
+        if: github.event_name == 'push'
+        run: |
+          cd backend && npx snyk monitor --file=pom.xml
+          cd ../frontend/common-queue-frontend && npx snyk monitor --file=package-lock.json
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           
   # =============================================
   # DEPLOY ALL SERVICES TO ECS (Frontend, Backend, Database)
   # =============================================
   deploy-ecs:
-    name: Deploy All Services to ECS
+    name: Deploy Services to ECS
     runs-on: ubuntu-latest
     # needs: [frontend-security, backend-security]
     permissions:
