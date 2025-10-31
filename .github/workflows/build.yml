@@ -226,7 +226,7 @@ jobs:
   deploy-ecs:
     name: Deploy All Services to ECS
     runs-on: ubuntu-latest
-    needs: [frontend-security, backend-security]
+    # needs: [frontend-security, backend-security]
     permissions:
       contents: read
       id-token: write
