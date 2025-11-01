@@ -29,19 +29,13 @@ public class SmsNotificationStrategy implements NotificationStrategy {
         Notification notification = new Notification(
                 customer, type, NotificationChannel.SMS, title, message, customer.getPhone()
         );
-        notification.setQueueEntry(queueEntry);
-        notificationRepository.save(notification);
         
         try {
-            // TODO: Integrate with SMS service provider
-            // Example for Twilio:
-            // Message smsMessage = Message.creator(
-            //     new PhoneNumber(customer.getPhone()),
-            //     new PhoneNumber(FROM_PHONE_NUMBER),
-            //     message
-            // ).create();
+            notification.setQueueEntry(queueEntry);
+            notificationRepository.save(notification);
             
-            // For now, just mark as sent (placeholder)
+            sendSms(notification);
+            
             notification.markAsSent();
             notificationRepository.save(notification);
             
@@ -53,6 +47,16 @@ public class SmsNotificationStrategy implements NotificationStrategy {
             
             return notification;
         }
+    }
+    
+    protected void sendSms(Notification notification) throws Exception {
+        // TODO: Integrate with SMS service provider
+        // Example for Twilio:
+        // Message smsMessage = Message.creator(
+        //     new PhoneNumber(customer.getPhone()),
+        //     new PhoneNumber(FROM_PHONE_NUMBER),
+        //     message
+        // ).create();
     }
     
     @Override

@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/businesses")
@@ -37,7 +39,7 @@ public class BusinessController {
     @GetMapping("/{id}")
     public ResponseEntity<BusinessResponse> getBusinessById(@PathVariable Long id) {
         Business business = businessRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Business not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Business not found"));
 
         return ResponseEntity.ok(BusinessResponse.fromEntity(business));
     }
