@@ -219,7 +219,7 @@ jobs:
           cd ../frontend/common-queue-frontend && npx snyk monitor --file=package-lock.json
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          
+
   # =============================================
   # DEPLOY ALL SERVICES TO ECS (Frontend, Backend, Database)
   # =============================================
