@@ -33,7 +33,7 @@ import { debounceTime, distinctUntilChanged, startWith, switchMap } from 'rxjs/o
       <div class="search-section">
         <h1>Find Businesses</h1>
         <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Search businesses</mat-label>
+          <mat-label>Search More businesses</mat-label>
           <mat-icon matPrefix>search</mat-icon>
           <input matInput [formControl]="searchControl" placeholder="Enter business name or type">
         </mat-form-field>
