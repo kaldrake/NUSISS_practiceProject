@@ -156,6 +156,7 @@
     ],
     "cpu": "1024",
     "executionRoleArn": "arn:aws:iam::905418191531:role/ecsTaskExecutionRole",
+    "taskroleArn" : "arn:aws:iam::905418191531:role/nusiss_practiceproject",
     "family": "main-app-td",
     "memory": "2048",
     "networkMode": "awsvpc",

@@ -9,9 +9,6 @@ on:
     - cron: '0 0 * * 1'
 
 jobs:
-  ### TEMPORARILY COMMENTED OUT ###
-  ### TEMPORARILY COMMENTED OUT ###
-  ### TEMPORARILY COMMENTED OUT ###
   # =============================================
   # BACKEND SCAN (Java + SonarQube + Snyk) 
   # =============================================
@@ -227,9 +224,9 @@ jobs:
   # DEPLOY ALL SERVICES TO ECS (Frontend, Backend, Database)
   # =============================================
   deploy-ecs:
-    name: Deploy All Services to ECS
+    name: Deploy Services to ECS
     runs-on: ubuntu-latest
-    needs: [frontend-security, backend-security]
+    # needs: [frontend-security, backend-security]
     permissions:
       contents: read
       id-token: write
