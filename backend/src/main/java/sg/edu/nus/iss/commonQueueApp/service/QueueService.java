@@ -4,7 +4,6 @@ import sg.edu.nus.iss.commonQueueApp.entity.*;
 import sg.edu.nus.iss.commonQueueApp.repository.*;
 import sg.edu.nus.iss.commonQueueApp.dto.QueueTimingRequest;
 import sg.edu.nus.iss.commonQueueApp.dto.QueueStatusResponse;
-import sg.edu.nus.iss.commonQueueApp.service.factory.QueueEntryFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,9 +33,6 @@ public class QueueService {
 
     @Autowired
     private NotificationService notificationService;
-
-    @Autowired
-    private QueueEntryFactory queueEntryFactory;
 
     /**
      * Create a new queue for business
@@ -106,18 +102,19 @@ public class QueueService {
 
         List<QueueEntry> activeEntries = queueEntryRepository.findActiveEntriesByQueueId(queueId);
 
-        return QueueStatusResponse.builder()
-                .queueId(queueId)
-                .queueName(queue.getQueueName())
-                .currentNumber(queue.getCurrentNumber())
-                .nextNumber(queue.getNextNumber())
-                .totalWaiting(activeEntries.size())
-                .estimatedWaitTime(queue.getEstimatedWaitTimeMinutes())
-                .isActive(queue.getIsActive())
-                .maxCapacity(queue.getMaxCapacity())
-                .avgServiceTime(queue.getAvgServiceTimeMinutes())
-                .servedToday(queue.getServedTodayCount())
-                .build();
+        QueueStatusResponse response = new QueueStatusResponse();
+        response.setQueueId(queueId);
+        response.setQueueName(queue.getQueueName());
+        response.setCurrentNumber(queue.getCurrentNumber());
+        response.setNextNumber(queue.getNextNumber());
+        response.setTotalWaiting(activeEntries.size());
+        response.setEstimatedWaitTime(queue.getEstimatedWaitTimeMinutes());
+        response.setIsActive(queue.getIsActive());
+        response.setMaxCapacity(queue.getMaxCapacity());
+        response.setAvgServiceTime(queue.getAvgServiceTimeMinutes());
+        response.setServedToday(queue.getServedTodayCount());
+
+        return response;
     }
 
     /**
@@ -149,9 +146,9 @@ public class QueueService {
         }
 
         // Create new queue entry
-        // Create new queue entry using factory
         Integer queueNumber = queue.generateNextNumber();
-        QueueEntry entry = queueEntryFactory.createEntry(queue, customer, queueNumber);
+        QueueEntry entry = new QueueEntry(queue, customer, queueNumber);
+        entry.setEstimatedWaitTimeMinutes(queue.getEstimatedWaitTimeMinutes());
 
         queueRepository.save(queue); // Save updated next number
         QueueEntry savedEntry = queueEntryRepository.save(entry);
@@ -261,7 +258,7 @@ public class QueueService {
                 .orElseThrow(() -> new RuntimeException("Queue not found"));
 
         return queueEntryRepository.findByQueueAndCustomerAndStatusIn(
-                queue, customer, List.of(QueueEntryStatus.WAITING, QueueEntryStatus.CALLED))
+                        queue, customer, List.of(QueueEntryStatus.WAITING, QueueEntryStatus.CALLED))
                 .orElseThrow(() -> new RuntimeException("Customer not found in queue"));
     }
 
@@ -311,17 +308,13 @@ public class QueueService {
      * Get queue statistics for business dashboard
      */
     public QueueStatistics getQueueStatistics(Long businessId, LocalDateTime startDate, LocalDateTime endDate) {
-        List<QueueEntry> entries = queueEntryRepository.findEntriesByBusinessIdAndDateRange(businessId, startDate,
-                endDate);
+        List<QueueEntry> entries = queueEntryRepository.findEntriesByBusinessIdAndDateRange(businessId, startDate, endDate);
 
         QueueStatistics stats = new QueueStatistics();
         stats.setTotalCustomers(entries.size());
-        stats.setServedCustomers(
-                entries.stream().mapToLong(e -> e.getStatus() == QueueEntryStatus.SERVED ? 1 : 0).sum());
-        stats.setCancelledCustomers(
-                entries.stream().mapToLong(e -> e.getStatus() == QueueEntryStatus.CANCELLED ? 1 : 0).sum());
-        stats.setNoShowCustomers(
-                entries.stream().mapToLong(e -> e.getStatus() == QueueEntryStatus.NO_SHOW ? 1 : 0).sum());
+        stats.setServedCustomers(entries.stream().mapToLong(e -> e.getStatus() == QueueEntryStatus.SERVED ? 1 : 0).sum());
+        stats.setCancelledCustomers(entries.stream().mapToLong(e -> e.getStatus() == QueueEntryStatus.CANCELLED ? 1 : 0).sum());
+        stats.setNoShowCustomers(entries.stream().mapToLong(e -> e.getStatus() == QueueEntryStatus.NO_SHOW ? 1 : 0).sum());
 
         // Calculate average wait time for served customers
         double avgWaitTime = entries.stream()
@@ -343,44 +336,19 @@ public class QueueService {
         private double averageWaitTimeMinutes;
 
         // Getters and setters
-        public long getTotalCustomers() {
-            return totalCustomers;
-        }
+        public long getTotalCustomers() { return totalCustomers; }
+        public void setTotalCustomers(long totalCustomers) { this.totalCustomers = totalCustomers; }
 
-        public void setTotalCustomers(long totalCustomers) {
-            this.totalCustomers = totalCustomers;
-        }
+        public long getServedCustomers() { return servedCustomers; }
+        public void setServedCustomers(long servedCustomers) { this.servedCustomers = servedCustomers; }
 
-        public long getServedCustomers() {
-            return servedCustomers;
-        }
+        public long getCancelledCustomers() { return cancelledCustomers; }
+        public void setCancelledCustomers(long cancelledCustomers) { this.cancelledCustomers = cancelledCustomers; }
 
-        public void setServedCustomers(long servedCustomers) {
-            this.servedCustomers = servedCustomers;
-        }
+        public long getNoShowCustomers() { return noShowCustomers; }
+        public void setNoShowCustomers(long noShowCustomers) { this.noShowCustomers = noShowCustomers; }
 
-        public long getCancelledCustomers() {
-            return cancelledCustomers;
-        }
-
-        public void setCancelledCustomers(long cancelledCustomers) {
-            this.cancelledCustomers = cancelledCustomers;
-        }
-
-        public long getNoShowCustomers() {
-            return noShowCustomers;
-        }
-
-        public void setNoShowCustomers(long noShowCustomers) {
-            this.noShowCustomers = noShowCustomers;
-        }
-
-        public double getAverageWaitTimeMinutes() {
-            return averageWaitTimeMinutes;
-        }
-
-        public void setAverageWaitTimeMinutes(double averageWaitTimeMinutes) {
-            this.averageWaitTimeMinutes = averageWaitTimeMinutes;
-        }
+        public double getAverageWaitTimeMinutes() { return averageWaitTimeMinutes; }
+        public void setAverageWaitTimeMinutes(double averageWaitTimeMinutes) { this.averageWaitTimeMinutes = averageWaitTimeMinutes; }
     }
 }

@@ -30,7 +30,8 @@ public class QueueController {
      * Create new queue (Business owners only)
      */
     @PostMapping("/business/{businessId}")
-    @PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    //PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<QueueResponse> createQueue(
             @PathVariable Long businessId,
             @Valid @RequestBody QueueTimingRequest request) {
@@ -45,7 +46,8 @@ public class QueueController {
      * Update queue timing information
      */
     @PutMapping("/{queueId}")
-    @PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    //@PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<QueueResponse> updateQueueTiming(
             @PathVariable Long queueId,
             @Valid @RequestBody QueueTimingRequest request) {
@@ -60,7 +62,8 @@ public class QueueController {
      * Delete/deactivate queue
      */
     @DeleteMapping("/{queueId}")
-    @PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    //@PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ApiResponse> deleteQueue(@PathVariable Long queueId) {
         queueService.deleteQueue(queueId);
         return ResponseEntity.ok(new ApiResponse(true, "Queue deleted successfully"));
@@ -93,7 +96,8 @@ public class QueueController {
      * Call next customer (Business staff)
      */
     @PostMapping("/{queueId}/call-next")
-    @PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    //@PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<QueueEntryResponse> callNextCustomer(@PathVariable Long queueId) {
         QueueEntry entry = queueService.callNextCustomer(queueId);
         QueueEntryResponse response = QueueEntryResponse.fromEntity(entry);
@@ -105,7 +109,8 @@ public class QueueController {
      * Mark customer as served
      */
     @PutMapping("/entries/{entryId}/served")
-    @PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    //@PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<QueueEntryResponse> markAsServed(@PathVariable Long entryId) {
         QueueEntry entry = queueService.markAsServed(entryId);
         QueueEntryResponse response = QueueEntryResponse.fromEntity(entry);
@@ -128,7 +133,8 @@ public class QueueController {
      * Mark customer as no-show
      */
     @PutMapping("/entries/{entryId}/no-show")
-    @PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    //@PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<QueueEntryResponse> markAsNoShow(@PathVariable Long entryId) {
         QueueEntry entry = queueService.markAsNoShow(entryId);
         QueueEntryResponse response = QueueEntryResponse.fromEntity(entry);
@@ -167,7 +173,8 @@ public class QueueController {
      * Get queue entries for a specific queue
      */
     @GetMapping("/{queueId}/entries")
-    @PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    //@PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<QueueEntryResponse>> getQueueEntries(@PathVariable Long queueId) {
         List<QueueEntry> entries = queueService.getQueueEntries(queueId);
         List<QueueEntryResponse> responses = entries.stream()
@@ -181,7 +188,8 @@ public class QueueController {
      * Reset queue (daily operation)
      */
     @PostMapping("/{queueId}/reset")
-    @PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    //@PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ApiResponse> resetQueue(@PathVariable Long queueId) {
         queueService.resetQueue(queueId);
         return ResponseEntity.ok(new ApiResponse(true, "Queue reset successfully"));
@@ -191,7 +199,8 @@ public class QueueController {
      * Get queue statistics
      */
     @GetMapping("/business/{businessId}/statistics")
-    @PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    //@PreAuthorize("hasRole('BUSINESS') or hasRole('STAFF')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<QueueStatistics> getQueueStatistics(
             @PathVariable Long businessId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,

@@ -12,7 +12,6 @@ import sg.edu.nus.iss.commonQueueApp.dto.ApiResponse;
 import sg.edu.nus.iss.commonQueueApp.dto.BusinessResponse;
 import sg.edu.nus.iss.commonQueueApp.entity.Business;
 import sg.edu.nus.iss.commonQueueApp.repository.BusinessRepository;
-import sg.edu.nus.iss.commonQueueApp.config.JwtUtil;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -30,8 +29,6 @@ public class AuthController {
 
     @Autowired
     private BusinessRepository businessRepository;
-    
-    private final JwtUtil jwtUtil = new JwtUtil();
 
     @PostMapping("/business/login")
     public ResponseEntity<?> businessLogin(@Valid @RequestBody LoginRequest loginRequest) {
@@ -57,9 +54,8 @@ public class AuthController {
             response.put("message", "Login successful");
             response.put("business", BusinessResponse.fromEntity(business));
 
-            // Generate JWT token
-            String x = authentication.getName();
-            response.put("token", jwtUtil.generateToken(authentication.getName()));
+            // In real application, generate JWT token here
+            // response.put("token", jwtUtils.generateToken(authentication));
 
             return ResponseEntity.ok(response);
 

@@ -180,7 +180,7 @@ CREATE TABLE customer_favorite_businesses (
 -- Insert sample test data (English)
 INSERT INTO businesses (business_name, email, password, phone, address, description, business_type, opening_time, closing_time) VALUES
 ('Singapore General Clinic', 'admin@sgclinic.com', 'newpassword', '+65-6123-4567', '123 Orchard Road, Singapore 238858', 'Comprehensive healthcare services and medical consultations', 'CLINIC', '08:00:00', '18:00:00'),
-('Golden Dragon Restaurant', 'manager@goldendragon.sg', 'newpassword', '+65-6234-5678', '456 Chinatown Street, Singapore 049568', 'Authentic Asian cuisine and fine dining experience', 'RESTAURANT', '11:00:00', '22:00:00'),
+('Golden Dragon Restaurant', 'manager@goldendragon.sg', 'newpassword', '+65-6234-5678', '456 Chinatown Street, Singapore 049568', 'Authentic Asian cuisine and fine dining experience', 'RESTAURANT', '21:00:00', '23:00:00'),
 ('24/7 Pharmacy Plus', 'info@pharmacy24.sg', 'newpassword', '+65-6345-6789', '789 Tampines Ave 1, Singapore 520789', 'Round-the-clock pharmacy and healthcare products', 'PHARMACY', '00:00:00', '23:59:59'),
 ('City Bank Singapore', 'service@citybank.sg', 'newpassword', '+65-6456-7890', '100 Raffles Place, Singapore 048623', 'Full-service banking and financial solutions', 'BANK', '09:00:00', '17:00:00'),
 ('TechFix Service Center', 'support@techfix.sg', 'newpassword', '+65-6567-8901', '200 Jurong East Ave 1, Singapore 609731', 'Electronic device repair and technical support', 'SERVICE_CENTER', '10:00:00', '19:00:00');

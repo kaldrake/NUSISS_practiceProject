@@ -2,26 +2,19 @@ package sg.edu.nus.iss.commonQueueApp.service;
 
 import sg.edu.nus.iss.commonQueueApp.entity.*;
 import sg.edu.nus.iss.commonQueueApp.repository.NotificationRepository;
-import sg.edu.nus.iss.commonQueueApp.service.notification.EmailNotificationStrategy;
-import sg.edu.nus.iss.commonQueueApp.service.notification.NotificationStrategy;
-import sg.edu.nus.iss.commonQueueApp.service.notification.NotificationStrategyFactory;
-import sg.edu.nus.iss.commonQueueApp.service.notification.SmsNotificationStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * Service for handling notifications using Strategy Pattern
- * 
- * Benefits of Strategy Pattern:
- * - Easy to add new notification channels (WhatsApp, Push, Telegram)
- * - Each channel is independent and can be tested separately
- * - Cleaner code with separated concerns
- * - No if-else chains for channel selection
+ * Service for handling notifications
  */
 @Service
 @Transactional
@@ -29,15 +22,11 @@ public class NotificationService {
 
     @Autowired
     private NotificationRepository notificationRepository;
-    
+
     @Autowired
-    private NotificationStrategyFactory strategyFactory;
-    
-    @Autowired
-    private EmailNotificationStrategy emailStrategy;
-    
-    @Autowired
-    private SmsNotificationStrategy smsStrategy;
+    private JavaMailSender mailSender;
+
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     /**
      * Send queue joined confirmation notification
@@ -56,7 +45,15 @@ public class NotificationService {
                 queueEntry.getEstimatedWaitTimeMinutes()
         );
 
-        sendNotificationToCustomer(customer, title, message, NotificationType.QUEUE_JOINED, queueEntry);
+        // Send email notification
+        if (customer.canReceiveEmailNotifications()) {
+            sendEmailNotification(customer, title, message, NotificationType.QUEUE_JOINED, queueEntry);
+        }
+
+        // Send SMS notification (placeholder - would integrate with SMS service)
+        if (customer.canReceiveSmsNotifications()) {
+            sendSmsNotification(customer, title, message, NotificationType.QUEUE_JOINED, queueEntry);
+        }
     }
 
     /**
@@ -75,7 +72,13 @@ public class NotificationService {
                 queueEntry.getQueueNumber()
         );
 
-        sendNotificationToCustomer(customer, title, message, NotificationType.TURN_APPROACHING, queueEntry);
+        if (customer.canReceiveEmailNotifications()) {
+            sendEmailNotification(customer, title, message, NotificationType.TURN_APPROACHING, queueEntry);
+        }
+
+        if (customer.canReceiveSmsNotifications()) {
+            sendSmsNotification(customer, title, message, NotificationType.TURN_APPROACHING, queueEntry);
+        }
 
         // Mark notification as sent
         queueEntry.setNotificationSent(true);
@@ -97,7 +100,13 @@ public class NotificationService {
                 queueEntry.getQueueNumber()
         );
 
-        sendNotificationToCustomer(customer, title, message, NotificationType.TURN_READY, queueEntry);
+        if (customer.canReceiveEmailNotifications()) {
+            sendEmailNotification(customer, title, message, NotificationType.TURN_READY, queueEntry);
+        }
+
+        if (customer.canReceiveSmsNotifications()) {
+            sendSmsNotification(customer, title, message, NotificationType.TURN_READY, queueEntry);
+        }
     }
 
     /**
@@ -115,7 +124,13 @@ public class NotificationService {
                 queue.getBusiness().getBusinessName()
         );
 
-        sendNotificationToCustomer(customer, title, message, NotificationType.QUEUE_CANCELLED, queueEntry);
+        if (customer.canReceiveEmailNotifications()) {
+            sendEmailNotification(customer, title, message, NotificationType.QUEUE_CANCELLED, queueEntry);
+        }
+
+        if (customer.canReceiveSmsNotifications()) {
+            sendSmsNotification(customer, title, message, NotificationType.QUEUE_CANCELLED, queueEntry);
+        }
     }
 
     /**
@@ -132,7 +147,9 @@ public class NotificationService {
                 queue.getBusiness().getBusinessName()
         );
 
-        sendNotificationToCustomer(customer, title, message, NotificationType.FEEDBACK_REQUEST, queueEntry);
+        if (customer.canReceiveEmailNotifications()) {
+            sendEmailNotification(customer, title, message, NotificationType.FEEDBACK_REQUEST, queueEntry);
+        }
     }
 
     /**
@@ -151,10 +168,111 @@ public class NotificationService {
                 queueEntry.getQueueNumber()
         );
 
-        sendNotificationToCustomer(customer, title, message, NotificationType.REMINDER, queueEntry);
+        if (customer.canReceiveEmailNotifications()) {
+            sendEmailNotification(customer, title, message, NotificationType.REMINDER, queueEntry);
+        }
+
+        if (customer.canReceiveSmsNotifications()) {
+            sendSmsNotification(customer, title, message, NotificationType.REMINDER, queueEntry);
+        }
 
         // Mark reminder as sent
         queueEntry.setReminderSent(true);
+    }
+
+    /**
+     * Send email notification
+     */
+    private void sendEmailNotification(Customer customer, String title, String message,
+                                       NotificationType type, QueueEntry queueEntry) {
+        try {
+            // Create notification record
+            Notification notification = new Notification(
+                    customer, type, NotificationChannel.EMAIL, title, message, customer.getEmail()
+            );
+            notification.setQueueEntry(queueEntry);
+            notificationRepository.save(notification);
+
+            // Send email
+            SimpleMailMessage mailMessage = new SimpleMailMessage();
+            mailMessage.setTo(customer.getEmail());
+            mailMessage.setSubject(title);
+            mailMessage.setText(message);
+            mailMessage.setFrom("noreply@commonqueue.com");
+
+            mailSender.send(mailMessage);
+
+            // Mark as sent
+            notification.markAsSent();
+            notificationRepository.save(notification);
+
+        } catch (Exception e) {
+            // Log error and mark notification as failed
+            Notification notification = new Notification(
+                    customer, type, NotificationChannel.EMAIL, title, message, customer.getEmail()
+            );
+            notification.setQueueEntry(queueEntry);
+            notification.markAsFailed(e.getMessage());
+            notificationRepository.save(notification);
+        }
+    }
+
+    /**
+     * Send SMS notification (placeholder implementation)
+     */
+    private void sendSmsNotification(Customer customer, String title, String message,
+                                     NotificationType type, QueueEntry queueEntry) {
+        // Create notification record
+        Notification notification = new Notification(
+                customer, type, NotificationChannel.SMS, title, message, customer.getPhone()
+        );
+        notification.setQueueEntry(queueEntry);
+        notificationRepository.save(notification);
+
+        try {
+            // TODO: Integrate with SMS service provider (Twilio, AWS SNS, etc.)
+            // For now, just mark as sent
+            notification.markAsSent();
+            notificationRepository.save(notification);
+
+        } catch (Exception e) {
+            notification.markAsFailed(e.getMessage());
+            notificationRepository.save(notification);
+        }
+    }
+
+    /**
+     * Process pending notifications (scheduled task)
+     */
+    public void processPendingNotifications() {
+        List<Notification> pendingNotifications = notificationRepository
+                .findByStatusOrderByCreatedAtAsc(NotificationStatus.PENDING);
+
+        for (Notification notification : pendingNotifications) {
+            try {
+                if (notification.getChannel() == NotificationChannel.EMAIL) {
+                    resendEmailNotification(notification);
+                } else if (notification.getChannel() == NotificationChannel.SMS) {
+                    resendSmsNotification(notification);
+                }
+            } catch (Exception e) {
+                notification.markAsFailed(e.getMessage());
+                notificationRepository.save(notification);
+            }
+        }
+    }
+
+    /**
+     * Retry failed notifications
+     */
+    public void retryFailedNotifications() {
+        List<Notification> failedNotifications = notificationRepository.findFailedNotificationsForRetry();
+
+        for (Notification notification : failedNotifications) {
+            notification.incrementRetryCount();
+            notification.setStatus(NotificationStatus.PENDING);
+            notificationRepository.save(notification);
+        }
     }
 
     /**
@@ -173,58 +291,12 @@ public class NotificationService {
                 additionalMinutes
         );
 
-        sendNotificationToCustomer(customer, title, message, NotificationType.QUEUE_DELAYED, queueEntry);
-    }
-
-    /**
-     * Core method to send notification to customer through all their preferred channels
-     * Uses Strategy Pattern to delegate to appropriate notification strategies
-     */
-    private void sendNotificationToCustomer(Customer customer, String title, String message,
-                                           NotificationType type, QueueEntry queueEntry) {
-        // Send through all applicable channels based on customer preferences
-        for (NotificationStrategy strategy : strategyFactory.getAllStrategies().values()) {
-            if (strategy.canSend(customer)) {
-                strategy.send(customer, title, message, type, queueEntry);
-            }
+        if (customer.canReceiveEmailNotifications()) {
+            sendEmailNotification(customer, title, message, NotificationType.QUEUE_DELAYED, queueEntry);
         }
-    }
 
-    /**
-     * Process pending notifications (scheduled task)
-     */
-    public void processPendingNotifications() {
-        List<Notification> pendingNotifications = notificationRepository
-                .findByStatusOrderByCreatedAtAsc(NotificationStatus.PENDING);
-
-        for (Notification notification : pendingNotifications) {
-            try {
-                NotificationStrategy strategy = strategyFactory.getStrategy(notification.getChannel());
-                
-                // Resend using appropriate strategy
-                if (strategy instanceof EmailNotificationStrategy) {
-                    ((EmailNotificationStrategy) strategy).resend(notification);
-                } else if (strategy instanceof SmsNotificationStrategy) {
-                    ((SmsNotificationStrategy) strategy).resend(notification);
-                }
-                
-            } catch (Exception e) {
-                notification.markAsFailed(e.getMessage());
-                notificationRepository.save(notification);
-            }
-        }
-    }
-
-    /**
-     * Retry failed notifications
-     */
-    public void retryFailedNotifications() {
-        List<Notification> failedNotifications = notificationRepository.findFailedNotificationsForRetry();
-
-        for (Notification notification : failedNotifications) {
-            notification.incrementRetryCount();
-            notification.setStatus(NotificationStatus.PENDING);
-            notificationRepository.save(notification);
+        if (customer.canReceiveSmsNotifications()) {
+            sendSmsNotification(customer, title, message, NotificationType.QUEUE_DELAYED, queueEntry);
         }
     }
 
@@ -262,6 +334,31 @@ public class NotificationService {
     public void sendBulkQueueNotification(Long queueId, String title, String message) {
         // This would be used for emergency notifications or general announcements
         // Implementation would fetch all active queue entries and send notifications
+    }
+
+    /**
+     * Resend email notification
+     */
+    private void resendEmailNotification(Notification notification) throws Exception {
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(notification.getRecipient());
+        mailMessage.setSubject(notification.getTitle());
+        mailMessage.setText(notification.getMessage());
+        mailMessage.setFrom("noreply@commonqueue.com");
+
+        mailSender.send(mailMessage);
+
+        notification.markAsSent();
+        notificationRepository.save(notification);
+    }
+
+    /**
+     * Resend SMS notification
+     */
+    private void resendSmsNotification(Notification notification) throws Exception {
+        // TODO: Implement SMS resend logic
+        notification.markAsSent();
+        notificationRepository.save(notification);
     }
 
     /**
