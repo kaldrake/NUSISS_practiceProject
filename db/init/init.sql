@@ -178,11 +178,11 @@ CREATE TABLE customer_favorite_businesses (
 
 -- Insert sample test data (English)
 INSERT INTO businesses (business_name, email, password, phone, address, description, business_type, opening_time, closing_time) VALUES
-('Singapore General Clinic', 'admin@sgclinic.com', '$2a$10$dummyhashedpassword123', '+65-6123-4567', '123 Orchard Road, Singapore 238858', 'Comprehensive healthcare services and medical consultations', 'CLINIC', '08:00:00', '18:00:00'),
-('Golden Dragon Restaurant', 'manager@goldendragon.sg', '$2a$10$dummyhashedpassword123', '+65-6234-5678', '456 Chinatown Street, Singapore 049568', 'Authentic Asian cuisine and fine dining experience', 'RESTAURANT', '11:00:00', '22:00:00'),
-('24/7 Pharmacy Plus', 'info@pharmacy24.sg', '$2a$10$dummyhashedpassword123', '+65-6345-6789', '789 Tampines Ave 1, Singapore 520789', 'Round-the-clock pharmacy and healthcare products', 'PHARMACY', '00:00:00', '23:59:59'),
-('City Bank Singapore', 'service@citybank.sg', '$2a$10$dummyhashedpassword123', '+65-6456-7890', '100 Raffles Place, Singapore 048623', 'Full-service banking and financial solutions', 'BANK', '09:00:00', '17:00:00'),
-('TechFix Service Center', 'support@techfix.sg', '$2a$10$dummyhashedpassword123', '+65-6567-8901', '200 Jurong East Ave 1, Singapore 609731', 'Electronic device repair and technical support', 'SERVICE_CENTER', '10:00:00', '19:00:00');
+('Singapore General Clinic', 'admin@sgclinic.com', 'newpassword', '+65-6123-4567', '123 Orchard Road, Singapore 238858', 'Comprehensive healthcare services and medical consultations', 'CLINIC', '08:00:00', '18:00:00'),
+('Golden Dragon Restaurant', 'manager@goldendragon.sg', 'newpassword', '+65-6234-5678', '456 Chinatown Street, Singapore 049568', 'Authentic Asian cuisine and fine dining experience', 'RESTAURANT', '11:00:00', '22:00:00'),
+('24/7 Pharmacy Plus', 'info@pharmacy24.sg', 'newpassword', '+65-6345-6789', '789 Tampines Ave 1, Singapore 520789', 'Round-the-clock pharmacy and healthcare products', 'PHARMACY', '00:00:00', '23:59:59'),
+('City Bank Singapore', 'service@citybank.sg', 'newpassword', '+65-6456-7890', '100 Raffles Place, Singapore 048623', 'Full-service banking and financial solutions', 'BANK', '09:00:00', '17:00:00'),
+('TechFix Service Center', 'support@techfix.sg', 'newpassword', '+65-6567-8901', '200 Jurong East Ave 1, Singapore 609731', 'Electronic device repair and technical support', 'SERVICE_CENTER', '10:00:00', '19:00:00');
 
 INSERT INTO customers (name, email, phone, notification_preference) VALUES
 ('John Smith', 'john.smith@email.com', '+65-8123-4567', 'BOTH'),
@@ -196,11 +196,11 @@ INSERT INTO customers (name, email, phone, notification_preference) VALUES
 
 -- Create staff accounts for businesses
 INSERT INTO staff (name, email, password, phone, role, business_id) VALUES
-('Dr. Amanda Lee', 'dr.lee@sgclinic.com', '$2a$10$dummyhashedpassword123', '+65-9123-4567', 'ADMIN', 1),
-('Nurse Betty Tan', 'nurse.tan@sgclinic.com', '$2a$10$dummyhashedpassword123', '+65-9234-5678', 'STAFF', 1),
-('Chef Wong Ming', 'chef.wong@goldendragon.sg', '$2a$10$dummyhashedpassword123', '+65-9345-6789', 'MANAGER', 2),
-('Waiter James Lim', 'james.lim@goldendragon.sg', '$2a$10$dummyhashedpassword123', '+65-9456-7890', 'STAFF', 2),
-('Pharmacist Mary Ng', 'mary.ng@pharmacy24.sg', '$2a$10$dummyhashedpassword123', '+65-9567-8901', 'ADMIN', 3);
+('Dr. Amanda Lee', 'dr.lee@sgclinic.com', 'newpassword', '+65-9123-4567', 'ADMIN', 1),
+('Nurse Betty Tan', 'nurse.tan@sgclinic.com', 'newpassword', '+65-9234-5678', 'STAFF', 1),
+('Chef Wong Ming', 'chef.wong@goldendragon.sg', 'newpassword', '+65-9345-6789', 'MANAGER', 2),
+('Waiter James Lim', 'james.lim@goldendragon.sg', 'newpassword', '+65-9456-7890', 'STAFF', 2),
+('Pharmacist Mary Ng', 'mary.ng@pharmacy24.sg', 'newpassword', '+65-9567-8901', 'ADMIN', 3);
 
 -- Create queues for Singapore General Clinic
 INSERT INTO queues (queue_name, description, business_id, queue_type, avg_service_time_minutes, max_capacity, color_code) VALUES

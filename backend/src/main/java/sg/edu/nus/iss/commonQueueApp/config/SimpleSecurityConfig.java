@@ -35,8 +35,8 @@ public class SimpleSecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         // Using NoOpPasswordEncoder for debugging - NOT recommended for production
-//        return NoOpPasswordEncoder.getInstance();
-        return new BCryptPasswordEncoder();
+        return NoOpPasswordEncoder.getInstance();
+//        return new BCryptPasswordEncoder();
     }
 
     @Bean
