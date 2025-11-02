@@ -1,5 +1,6 @@
 -- Common Queue Database Schema - English Version
 -- Create database
+DROP DATABASE IF EXISTS common_queue;
 CREATE DATABASE IF NOT EXISTS common_queue CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE common_queue;
 
