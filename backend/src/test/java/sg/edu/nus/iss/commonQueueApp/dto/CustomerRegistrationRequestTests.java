@@ -4,9 +4,10 @@
  */
 package sg.edu.nus.iss.commonQueueApp.dto;
 
-import jakarta.validation.*;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import jakarta.validation.*;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,70 +16,78 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author junwe
  */
 public class CustomerRegistrationRequestTests {
-    private static Validator validator;
+    private Validator validator;
 
-    @BeforeAll
-    public static void setupValidator() {
+    @BeforeEach
+    void setUp() {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
 
     @Test
-    void whenAllFieldsValid_thenNoConstraintViolations() {
-        CustomerRegistrationRequest request = CustomerRegistrationRequest.builder()
-                .name("Alice")
-                .email("alice@example.com")
-                .phone("+65 9123 4567")
-                .languagePreference("en")
-                .build();
+    void whenValidRequest_thenNoValidationErrors() {
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest();
+        request.setName("Alice Tan");
+        request.setEmail("alice@example.com");
+        request.setPhone("91234567");
+        request.setLanguagePreference("en");
 
         Set<ConstraintViolation<CustomerRegistrationRequest>> violations = validator.validate(request);
-        assertTrue(violations.isEmpty(), "There should be no constraint violations");
+        assertTrue(violations.isEmpty(), "Expected no validation errors");
     }
 
     @Test
-    void whenNameIsBlank_thenValidationFails() {
-        CustomerRegistrationRequest request = CustomerRegistrationRequest.builder()
-                .name("   ") // blank name
-                .email("alice@example.com")
-                .build();
+    void whenNameMissing_thenValidationError() {
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest();
+        request.setEmail("user@example.com");
 
         Set<ConstraintViolation<CustomerRegistrationRequest>> violations = validator.validate(request);
-        assertFalse(violations.isEmpty(), "Name should not be blank");
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("name")));
+
+        assertFalse(violations.isEmpty(), "Expected validation error for missing name");
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Name is required")));
     }
 
     @Test
-    void whenEmailIsInvalid_thenValidationFails() {
-        CustomerRegistrationRequest request = CustomerRegistrationRequest.builder()
-                .name("Alice")
-                .email("invalid-email") // invalid email
-                .build();
+    void whenEmailInvalid_thenValidationError() {
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest();
+        request.setName("John Doe");
+        request.setEmail("not-an-email");
 
         Set<ConstraintViolation<CustomerRegistrationRequest>> violations = validator.validate(request);
-        assertFalse(violations.isEmpty(), "Email should be invalid");
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("email")));
+
+        assertFalse(violations.isEmpty(), "Expected validation error for invalid email");
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Please provide a valid email")));
     }
 
     @Test
-    void whenPhoneTooLong_thenValidationFails() {
-        CustomerRegistrationRequest request = CustomerRegistrationRequest.builder()
-                .name("Alice")
-                .phone("1234567890123456789012345") // more than 20 chars
-                .build();
+    void whenPhoneTooLong_thenValidationError() {
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest();
+        request.setName("Jane Doe");
+        request.setPhone("123456789012345678901"); // 21 chars
 
         Set<ConstraintViolation<CustomerRegistrationRequest>> violations = validator.validate(request);
-        assertFalse(violations.isEmpty(), "Phone number should exceed max length");
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("phone")));
+
+        assertFalse(violations.isEmpty(), "Expected validation error for phone length");
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Phone number must not exceed 20 characters")));
     }
 
     @Test
-    void whenLanguagePreferenceNotSet_thenDefaultsToEn() {
-        CustomerRegistrationRequest request = CustomerRegistrationRequest.builder()
-                .name("Alice")
-                .email("alice@example.com")
-                .build();
-
+    void whenLanguagePreferenceNotSet_thenDefaultIsEnglish() {
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest();
         assertEquals("en", request.getLanguagePreference(), "Default language should be 'en'");
+    }
+
+    @Test
+    void testGettersAndSetters() {
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest();
+        request.setName("Tom Lee");
+        request.setEmail("tom@example.com");
+        request.setPhone("98765432");
+        request.setLanguagePreference("zh");
+
+        assertEquals("Tom Lee", request.getName());
+        assertEquals("tom@example.com", request.getEmail());
+        assertEquals("98765432", request.getPhone());
+        assertEquals("zh", request.getLanguagePreference());
     }
 }

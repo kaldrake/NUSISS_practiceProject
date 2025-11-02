@@ -21,10 +21,10 @@ import java.util.List;
 public class NotificationService {
 
     @Autowired
-    private NotificationRepository notificationRepository;
+    protected NotificationRepository notificationRepository;
 
     @Autowired
-    private JavaMailSender mailSender;
+    protected JavaMailSender mailSender;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 

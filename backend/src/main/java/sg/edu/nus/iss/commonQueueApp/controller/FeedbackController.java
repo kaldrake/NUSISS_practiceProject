@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/feedback")
@@ -37,7 +39,7 @@ public class FeedbackController {
             @Valid @RequestBody FeedbackRequest request) {
 
         Business business = businessRepository.findById(request.getBusinessId())
-                .orElseThrow(() -> new RuntimeException("Business not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Business not found"));
 
         Customer customer = null;
         if (request.getCustomerId() != null) {
@@ -89,7 +91,7 @@ public class FeedbackController {
             @PathVariable Long customerId) {
 
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
         List<Feedback> feedbacks = feedbackRepository.findByCustomerOrderByCreatedAtDesc(customer);
         List<FeedbackResponse> responses = feedbacks.stream()

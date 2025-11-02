@@ -5,7 +5,6 @@
 package sg.edu.nus.iss.commonQueueApp.dto;
 
 import org.junit.jupiter.api.Test;
-import sg.edu.nus.iss.commonQueueApp.dto.QueueStatusResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
 /**
@@ -14,56 +13,67 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class QueueStatusResponseTests {
     @Test
-    void testSettersAndGetters() {
+    void testGettersAndSetters() {
         QueueStatusResponse response = new QueueStatusResponse();
 
-        response.setQueueId(1L);
-        response.setQueueName("VIP Queue");
-        response.setCurrentNumber(5);
-        response.setNextNumber(6);
-        response.setTotalWaiting(10);
-        response.setEstimatedWaitTime(15);
-        response.setIsActive(true);
-        response.setMaxCapacity(50);
-        response.setAvgServiceTime(10);
-        response.setServedToday(20L);
+        Long queueId = 1L;
+        String queueName = "Main Queue";
+        Integer currentNumber = 10;
+        Integer nextNumber = 11;
+        Integer totalWaiting = 5;
+        Integer estimatedWaitTime = 15;
+        Boolean isActive = true;
+        Integer maxCapacity = 100;
+        Integer avgServiceTime = 3;
+        Long servedToday = 250L;
 
-        assertEquals(1L, response.getQueueId());
-        assertEquals("VIP Queue", response.getQueueName());
-        assertEquals(5, response.getCurrentNumber());
-        assertEquals(6, response.getNextNumber());
-        assertEquals(10, response.getTotalWaiting());
-        assertEquals(15, response.getEstimatedWaitTime());
-        assertTrue(response.getIsActive());
-        assertEquals(50, response.getMaxCapacity());
-        assertEquals(10, response.getAvgServiceTime());
-        assertEquals(20L, response.getServedToday());
+        response.setQueueId(queueId);
+        response.setQueueName(queueName);
+        response.setCurrentNumber(currentNumber);
+        response.setNextNumber(nextNumber);
+        response.setTotalWaiting(totalWaiting);
+        response.setEstimatedWaitTime(estimatedWaitTime);
+        response.setIsActive(isActive);
+        response.setMaxCapacity(maxCapacity);
+        response.setAvgServiceTime(avgServiceTime);
+        response.setServedToday(servedToday);
+
+        assertEquals(queueId, response.getQueueId());
+        assertEquals(queueName, response.getQueueName());
+        assertEquals(currentNumber, response.getCurrentNumber());
+        assertEquals(nextNumber, response.getNextNumber());
+        assertEquals(totalWaiting, response.getTotalWaiting());
+        assertEquals(estimatedWaitTime, response.getEstimatedWaitTime());
+        assertEquals(isActive, response.getIsActive());
+        assertEquals(maxCapacity, response.getMaxCapacity());
+        assertEquals(avgServiceTime, response.getAvgServiceTime());
+        assertEquals(servedToday, response.getServedToday());
     }
 
     @Test
-    void testBuilder() {
-        QueueStatusResponse response = QueueStatusResponse.builder()
-                .queueId(2L)
-                .queueName("Regular Queue")
-                .currentNumber(1)
-                .nextNumber(2)
-                .totalWaiting(5)
-                .estimatedWaitTime(12)
-                .isActive(false)
-                .maxCapacity(100)
-                .avgServiceTime(8)
-                .servedToday(15L)
-                .build();
+    void testDefaultConstructorAndInitialValues() {
+        QueueStatusResponse response = new QueueStatusResponse();
 
-        assertEquals(2L, response.getQueueId());
-        assertEquals("Regular Queue", response.getQueueName());
-        assertEquals(1, response.getCurrentNumber());
-        assertEquals(2, response.getNextNumber());
-        assertEquals(5, response.getTotalWaiting());
-        assertEquals(12, response.getEstimatedWaitTime());
-        assertFalse(response.getIsActive());
-        assertEquals(100, response.getMaxCapacity());
-        assertEquals(8, response.getAvgServiceTime());
-        assertEquals(15L, response.getServedToday());
+        assertNull(response.getQueueId());
+        assertNull(response.getQueueName());
+        assertNull(response.getCurrentNumber());
+        assertNull(response.getNextNumber());
+        assertNull(response.getTotalWaiting());
+        assertNull(response.getEstimatedWaitTime());
+        assertNull(response.getIsActive());
+        assertNull(response.getMaxCapacity());
+        assertNull(response.getAvgServiceTime());
+        assertNull(response.getServedToday());
+    }
+
+    @Test
+    void testUpdateFields() {
+        QueueStatusResponse response = new QueueStatusResponse();
+
+        response.setQueueName("Initial Queue");
+        assertEquals("Initial Queue", response.getQueueName());
+
+        response.setQueueName("Updated Queue");
+        assertEquals("Updated Queue", response.getQueueName(), "Queue name should update correctly");
     }
 }

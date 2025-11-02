@@ -4,23 +4,18 @@
  */
 package sg.edu.nus.iss.commonQueueApp.service;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.*;
 import sg.edu.nus.iss.commonQueueApp.entity.*;
 import sg.edu.nus.iss.commonQueueApp.repository.NotificationRepository;
-import sg.edu.nus.iss.commonQueueApp.service.notification.EmailNotificationStrategy;
-import sg.edu.nus.iss.commonQueueApp.service.notification.NotificationStrategy;
-import sg.edu.nus.iss.commonQueueApp.service.notification.NotificationStrategyFactory;
-import sg.edu.nus.iss.commonQueueApp.service.notification.SmsNotificationStrategy;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -28,106 +23,120 @@ import static org.mockito.Mockito.*;
  * @author junwe
  */
 public class NotificationServiceTests {
-    @Mock
     private NotificationRepository notificationRepository;
-
-    @Mock
-    private NotificationStrategyFactory strategyFactory;
-
-    @Mock
-    private EmailNotificationStrategy emailStrategy;
-
-    @Mock
-    private SmsNotificationStrategy smsStrategy;
-
-    @InjectMocks
+    private JavaMailSender mailSender;
     private NotificationService notificationService;
 
-    private QueueEntry queueEntry;
     private Customer customer;
-    private Queue queue;
     private Business business;
+    private Queue queue;
+    private QueueEntry queueEntry;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        notificationRepository = mock(NotificationRepository.class);
+        mailSender = mock(JavaMailSender.class);
+
+        notificationService = new NotificationService();
+        // Inject mocks
+        notificationService.notificationRepository = notificationRepository;
+        notificationService.mailSender = mailSender;
 
         business = new Business();
-        business.setBusinessName("Cafe Java");
-
-        queue = new Queue();
-        queue.setQueueName("Main Queue");
-        queue.setBusiness(business);
+        business.setBusinessName("Test Business");
 
         customer = new Customer();
         customer.setId(1L);
-        customer.setName("Alice");
+        customer.setName("John Doe");
+        customer.setEmail("john@example.com");
+        customer.setPhone("12345678");
+
+        queue = new Queue();
+        queue.setQueueName("Test Queue");
+        queue.setBusiness(business);
 
         queueEntry = new QueueEntry();
         queueEntry.setCustomer(customer);
         queueEntry.setQueue(queue);
         queueEntry.setQueueNumber(5);
-        queueEntry.setEstimatedWaitTimeMinutes(10);
-
-        // Mock strategy factory with 2 strategies
-        Map<NotificationChannel, NotificationStrategy> strategies = new HashMap<>();
-        strategies.put(NotificationChannel.EMAIL, emailStrategy);
-        strategies.put(NotificationChannel.SMS, smsStrategy);
-
-        when(strategyFactory.getAllStrategies()).thenReturn(strategies);
-        when(emailStrategy.canSend(any())).thenReturn(true);
-        when(smsStrategy.canSend(any())).thenReturn(true);
+        queueEntry.setEstimatedWaitTimeMinutes(15);
     }
 
     @Test
-    void testSendQueueJoinedNotification_ShouldDelegateToStrategies() {
+    void testSendQueueJoinedNotification_EmailAndSmsSent() {
+        // Allow email & SMS notifications
+        customer.setNotificationPreference(NotificationPreference.BOTH);
+
         notificationService.sendQueueJoinedNotification(queueEntry);
 
-        verify(emailStrategy, times(1)).send(
-                eq(customer), anyString(), contains("joined the queue"), eq(NotificationType.QUEUE_JOINED), eq(queueEntry)
-        );
+        // Verify that repository.save was called (2 times: email + SMS)
+        verify(notificationRepository, atLeast(2)).save(any(Notification.class));
 
-        verify(smsStrategy, times(1)).send(
-                eq(customer), anyString(), contains("joined the queue"), eq(NotificationType.QUEUE_JOINED), eq(queueEntry)
-        );
+        // Verify that mailSender.send was called
+        verify(mailSender, times(1)).send(any(SimpleMailMessage.class));
     }
 
     @Test
-    void testProcessPendingNotifications_ShouldResendEmailAndSms() throws Exception {
-        Notification emailNotif = mock(Notification.class);
-        Notification smsNotif = mock(Notification.class);
+    void testSendTurnApproachingNotification_SetsNotificationSent() {
+        customer.setNotificationPreference(NotificationPreference.EMAIL);
 
-        when(emailNotif.getChannel()).thenReturn(NotificationChannel.EMAIL);
-        when(smsNotif.getChannel()).thenReturn(NotificationChannel.SMS);
-        when(notificationRepository.findByStatusOrderByCreatedAtAsc(NotificationStatus.PENDING))
-                .thenReturn(List.of(emailNotif, smsNotif));
+        notificationService.sendTurnApproachingNotification(queueEntry);
 
-        when(strategyFactory.getStrategy(NotificationChannel.EMAIL)).thenReturn(emailStrategy);
-        when(strategyFactory.getStrategy(NotificationChannel.SMS)).thenReturn(smsStrategy);
-
-        notificationService.processPendingNotifications();
-
-        verify(emailStrategy, times(1)).resend(emailNotif);
-        verify(smsStrategy, times(1)).resend(smsNotif);
-        verify(notificationRepository, never()).save(any());
+        assertTrue(queueEntry.getNotificationSent());
+        verify(notificationRepository, atLeast(1)).save(any(Notification.class));
+        verify(mailSender, times(1)).send(any(SimpleMailMessage.class));
     }
 
     @Test
-    void testProcessPendingNotifications_WhenStrategyThrows_ShouldMarkFailed() {
-        Notification notif = mock(Notification.class);
-        when(notif.getChannel()).thenReturn(NotificationChannel.EMAIL);
-        when(notificationRepository.findByStatusOrderByCreatedAtAsc(NotificationStatus.PENDING))
-                .thenReturn(List.of(notif));
-        when(strategyFactory.getStrategy(NotificationChannel.EMAIL)).thenThrow(new RuntimeException("boom"));
+    void testSendReminderNotification_SetsReminderSent() {
+        customer.setNotificationPreference(NotificationPreference.EMAIL);
 
-        notificationService.processPendingNotifications();
+        notificationService.sendReminderNotification(queueEntry);
 
-        verify(notif, times(1)).markAsFailed(anyString());
-        verify(notificationRepository, times(1)).save(notif);
+        assertTrue(queueEntry.getReminderSent());
+        verify(notificationRepository, atLeast(1)).save(any(Notification.class));
+        verify(mailSender, times(1)).send(any(SimpleMailMessage.class));
     }
 
     @Test
-    void testRetryFailedNotifications_ShouldResetStatusAndIncrementRetryCount() {
+    void testMarkNotificationAsRead() {
+        Notification notification = mock(Notification.class);
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
+
+        notificationService.markNotificationAsRead(1L);
+
+        verify(notification).markAsRead();
+        verify(notificationRepository).save(notification);
+    }
+
+    @Test
+    void testMarkNotificationAsRead_ThrowsWhenNotFound() {
+        when(notificationRepository.findById(1L)).thenReturn(Optional.empty());
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> notificationService.markNotificationAsRead(1L));
+        assertEquals("Notification not found", exception.getMessage());
+    }
+
+    @Test
+    void testGetCustomerNotifications() {
+        when(notificationRepository.findByCustomerOrderByCreatedAtDesc(any()))
+                .thenReturn(List.of(new Notification(), new Notification()));
+
+        List<Notification> notifications = notificationService.getCustomerNotifications(customer.getId());
+        assertEquals(2, notifications.size());
+        verify(notificationRepository).findByCustomerOrderByCreatedAtDesc(any(Customer.class));
+    }
+
+    @Test
+    void testGetUnreadNotificationsCount() {
+        when(notificationRepository.countUnreadNotificationsByCustomerId(customer.getId())).thenReturn(5L);
+
+        Long count = notificationService.getUnreadNotificationsCount(customer.getId());
+        assertEquals(5L, count);
+    }
+
+    @Test
+    void testRetryFailedNotifications() {
         Notification notif = mock(Notification.class);
         when(notificationRepository.findFailedNotificationsForRetry()).thenReturn(List.of(notif));
 
@@ -139,135 +148,55 @@ public class NotificationServiceTests {
     }
 
     @Test
-    void testMarkNotificationAsRead_ShouldUpdateAndSave() {
-        Notification notif = mock(Notification.class);
-        when(notificationRepository.findById(1L)).thenReturn(Optional.of(notif));
-
-        notificationService.markNotificationAsRead(1L);
-
-        verify(notif).markAsRead();
-        verify(notificationRepository).save(notif);
-    }
-
-    @Test
-    void testGetUnreadNotificationsCount_ShouldReturnCount() {
-        when(notificationRepository.countUnreadNotificationsByCustomerId(1L)).thenReturn(3L);
-
-        Long result = notificationService.getUnreadNotificationsCount(1L);
-
-        assertThat(result).isEqualTo(3L);
-        verify(notificationRepository).countUnreadNotificationsByCustomerId(1L);
-    }
-
-    @Test
-    void testCleanupOldNotifications_ShouldCancelAndSave() {
-        Notification oldNotif = new Notification();
-        oldNotif.setStatus(NotificationStatus.PENDING);
-
-        when(notificationRepository.findPendingNotificationsOlderThan(any(LocalDateTime.class)))
-                .thenReturn(List.of(oldNotif));
+    void testCleanupOldNotifications() {
+        Notification oldNotif = mock(Notification.class);
+        when(notificationRepository.findPendingNotificationsOlderThan(any())).thenReturn(List.of(oldNotif));
 
         notificationService.cleanupOldNotifications();
 
-        assertThat(oldNotif.getStatus()).isEqualTo(NotificationStatus.CANCELLED);
-        verify(notificationRepository).saveAll(anyList());
-    }
-
-    @Test
-    void testGetCustomerNotifications_ShouldDelegateToRepository() {
-        List<Notification> mockList = List.of(new Notification());
-        when(notificationRepository.findByCustomerOrderByCreatedAtDesc(any(Customer.class)))
-                .thenReturn(mockList);
-
-        List<Notification> result = notificationService.getCustomerNotifications(5L);
-
-        assertThat(result).hasSize(1);
-        verify(notificationRepository).findByCustomerOrderByCreatedAtDesc(any(Customer.class));
+        verify(oldNotif).setStatus(NotificationStatus.CANCELLED);
+        verify(notificationRepository).saveAll(List.of(oldNotif));
     }
     
     @Test
-    void testSendTurnApproachingNotification_ShouldDelegateAndMarkSent() {
-        notificationService.sendTurnApproachingNotification(queueEntry);
+    void testSendTurnReadyNotification_EmailAndSmsSent() {
+        customer.setNotificationPreference(NotificationPreference.BOTH);
 
-        verify(emailStrategy).send(
-                eq(customer),
-                eq("Your Turn is Approaching"),
-                contains("approaching"),
-                eq(NotificationType.TURN_APPROACHING),
-                eq(queueEntry)
-        );
-        verify(smsStrategy).send(any(), anyString(), anyString(), eq(NotificationType.TURN_APPROACHING), any());
-        assertThat(queueEntry.getNotificationSent()).isTrue();
-    }
-
-    @Test
-    void testSendTurnReadyNotification_ShouldDelegateToStrategies() {
         notificationService.sendTurnReadyNotification(queueEntry);
 
-        verify(emailStrategy).send(
-                eq(customer),
-                eq("Your Turn is Ready!"),
-                contains("Please proceed"),
-                eq(NotificationType.TURN_READY),
-                eq(queueEntry)
-        );
-        verify(smsStrategy).send(any(), anyString(), anyString(), eq(NotificationType.TURN_READY), any());
+        // Verify that notification repository saves the notification records
+        verify(notificationRepository, atLeast(2)).save(any(Notification.class));
+        verify(mailSender, times(1)).send(any(SimpleMailMessage.class));
     }
 
     @Test
-    void testSendQueueCancellationNotification_ShouldDelegateToStrategies() {
+    void testSendQueueCancellationNotification_EmailAndSmsSent() {
+        customer.setNotificationPreference(NotificationPreference.BOTH);
+
         notificationService.sendQueueCancellationNotification(queueEntry);
 
-        verify(emailStrategy).send(
-                eq(customer),
-                eq("Queue Cancelled"),
-                contains("cancelled"),
-                eq(NotificationType.QUEUE_CANCELLED),
-                eq(queueEntry)
-        );
-        verify(smsStrategy).send(any(), anyString(), anyString(), eq(NotificationType.QUEUE_CANCELLED), any());
+        verify(notificationRepository, atLeast(2)).save(any(Notification.class));
+        verify(mailSender, times(1)).send(any(SimpleMailMessage.class));
     }
 
     @Test
-    void testSendFeedbackRequestNotification_ShouldDelegateToStrategies() {
+    void testSendFeedbackRequestNotification_EmailOnly() {
+        customer.setNotificationPreference(NotificationPreference.BOTH);
+
         notificationService.sendFeedbackRequestNotification(queueEntry);
 
-        verify(emailStrategy).send(
-                eq(customer),
-                eq("How was your experience?"),
-                contains("rate your experience"),
-                eq(NotificationType.FEEDBACK_REQUEST),
-                eq(queueEntry)
-        );
-        verify(smsStrategy).send(any(), anyString(), anyString(), eq(NotificationType.FEEDBACK_REQUEST), any());
+        verify(notificationRepository, atLeast(1)).save(any(Notification.class));
+        verify(mailSender, times(1)).send(any(SimpleMailMessage.class));
     }
 
     @Test
-    void testSendReminderNotification_ShouldDelegateAndMarkReminderSent() {
-        notificationService.sendReminderNotification(queueEntry);
+    void testSendQueueDelayNotification_EmailAndSmsSent() {
+        customer.setNotificationPreference(NotificationPreference.BOTH);
 
-        verify(emailStrategy).send(
-                eq(customer),
-                eq("Reminder: Your Turn is Coming Soon"),
-                contains("5 minutes"),
-                eq(NotificationType.REMINDER),
-                eq(queueEntry)
-        );
-        verify(smsStrategy).send(any(), anyString(), anyString(), eq(NotificationType.REMINDER), any());
-        assertThat(queueEntry.getReminderSent()).isTrue();
-    }
+        int additionalMinutes = 10;
+        notificationService.sendQueueDelayNotification(queueEntry, additionalMinutes);
 
-    @Test
-    void testSendQueueDelayNotification_ShouldDelegateToStrategies() {
-        notificationService.sendQueueDelayNotification(queueEntry, 8);
-
-        verify(emailStrategy).send(
-                eq(customer),
-                eq("Queue Delay Notice"),
-                contains("increased by 8 minutes"),
-                eq(NotificationType.QUEUE_DELAYED),
-                eq(queueEntry)
-        );
-        verify(smsStrategy).send(any(), anyString(), anyString(), eq(NotificationType.QUEUE_DELAYED), any());
+        verify(notificationRepository, atLeast(2)).save(any(Notification.class));
+        verify(mailSender, times(1)).send(any(SimpleMailMessage.class));
     }
 }

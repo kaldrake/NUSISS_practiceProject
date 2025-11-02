@@ -5,7 +5,6 @@
 package sg.edu.nus.iss.commonQueueApp.dto;
 
 import org.junit.jupiter.api.Test;
-import sg.edu.nus.iss.commonQueueApp.dto.JoinQueueRequest;
 
 import static org.junit.jupiter.api.Assertions.*;
 /**
@@ -14,29 +13,29 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class JoinQueueRequestTests {
     @Test
-    void builderShouldSetCustomerId() {
-        JoinQueueRequest request = JoinQueueRequest.builder()
-                .customerId(123L)
-                .build();
-
-        assertEquals(123L, request.getCustomerId());
-    }
-
-    @Test
-    void setterShouldUpdateCustomerId() {
+    void testGettersAndSetters() {
         JoinQueueRequest request = new JoinQueueRequest();
-        request.setCustomerId(456L);
+        Long expectedCustomerId = 123L;
 
-        assertEquals(456L, request.getCustomerId());
+        request.setCustomerId(expectedCustomerId);
+
+        assertEquals(expectedCustomerId, request.getCustomerId(),
+                "Getter should return the same customerId set by the setter");
     }
 
     @Test
-    void toStringShouldContainCustomerId() {
-        JoinQueueRequest request = JoinQueueRequest.builder()
-                .customerId(789L)
-                .build();
+    void testDefaultConstructor() {
+        JoinQueueRequest request = new JoinQueueRequest();
+        assertNull(request.getCustomerId(), "Default customerId should be null");
+    }
 
-        String str = request.toString();
-        assertTrue(str.contains("789"));
+    @Test
+    void testUpdateCustomerId() {
+        JoinQueueRequest request = new JoinQueueRequest();
+        request.setCustomerId(1L);
+        assertEquals(1L, request.getCustomerId());
+
+        request.setCustomerId(2L);
+        assertEquals(2L, request.getCustomerId(), "CustomerId should update correctly");
     }
 }

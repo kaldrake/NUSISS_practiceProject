@@ -4,9 +4,12 @@
  */
 package sg.edu.nus.iss.commonQueueApp.dto;
 
+import jakarta.validation.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import sg.edu.nus.iss.commonQueueApp.dto.QueueTimingRequest;
 import sg.edu.nus.iss.commonQueueApp.entity.QueueType;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 /**
@@ -14,70 +17,116 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author junwe
  */
 public class QueueTimingRequestTests {
-    @Test
-    void testSettersAndGetters() {
-        QueueTimingRequest request = new QueueTimingRequest();
+    private Validator validator;
 
-        request.setQueueName("VIP Queue");
-        request.setDescription("Priority service queue");
-        request.setQueueType(QueueType.EXPRESS);
-        request.setAvgServiceTimeMinutes(15);
-        request.setMaxCapacity(20);
-        request.setColorCode("#FF5733");
+    @BeforeEach
+    void setUp() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
+    }
+
+    @Test
+    void whenValidRequest_thenNoValidationErrors() {
+        QueueTimingRequest request = new QueueTimingRequest();
+        request.setQueueName("Customer Support Queue");
+        request.setDescription("Handles all customer support tickets.");
+        request.setQueueType(QueueType.CONSULTATION);
+        request.setAvgServiceTimeMinutes(10);
+        request.setMaxCapacity(50);
+        request.setColorCode("#FF9900");
+
+        Set<ConstraintViolation<QueueTimingRequest>> violations = validator.validate(request);
+        assertTrue(violations.isEmpty(), "Expected no validation errors for valid request");
+    }
+
+    @Test
+    void whenQueueNameMissing_thenValidationError() {
+        QueueTimingRequest request = new QueueTimingRequest();
+        request.setAvgServiceTimeMinutes(5);
+
+        Set<ConstraintViolation<QueueTimingRequest>> violations = validator.validate(request);
+
+        assertFalse(violations.isEmpty(), "Expected validation error for missing queue name");
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getMessage().contains("Queue name is required")));
+    }
+
+    @Test
+    void whenQueueNameTooLong_thenValidationError() {
+        QueueTimingRequest request = new QueueTimingRequest();
+        request.setQueueName("A".repeat(101)); // exceeds 100 chars
+        request.setAvgServiceTimeMinutes(5);
+
+        Set<ConstraintViolation<QueueTimingRequest>> violations = validator.validate(request);
+
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getMessage().contains("must not exceed 100 characters")));
+    }
+
+    @Test
+    void whenDescriptionTooLong_thenValidationError() {
+        QueueTimingRequest request = new QueueTimingRequest();
+        request.setQueueName("Support Queue");
+        request.setDescription("B".repeat(256)); // exceeds 255 chars
+        request.setAvgServiceTimeMinutes(5);
+
+        Set<ConstraintViolation<QueueTimingRequest>> violations = validator.validate(request);
+
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getMessage().contains("Description must not exceed 255 characters")));
+    }
+
+    @Test
+    void whenAvgServiceTimeNonPositive_thenValidationError() {
+        QueueTimingRequest request = new QueueTimingRequest();
+        request.setQueueName("Fast Queue");
+        request.setAvgServiceTimeMinutes(0); // invalid
+
+        Set<ConstraintViolation<QueueTimingRequest>> violations = validator.validate(request);
+
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getMessage().contains("must be positive")));
+    }
+
+    @Test
+    void testParameterizedConstructor() {
+        QueueTimingRequest request = new QueueTimingRequest(
+                "VIP Queue",
+                QueueType.PRIORITY,
+                8
+        );
 
         assertEquals("VIP Queue", request.getQueueName());
-        assertEquals("Priority service queue", request.getDescription());
-        assertEquals(QueueType.EXPRESS, request.getQueueType());
-        assertEquals(15, request.getAvgServiceTimeMinutes());
-        assertEquals(20, request.getMaxCapacity());
-        assertEquals("#FF5733", request.getColorCode());
+        assertEquals(QueueType.PRIORITY, request.getQueueType());
+        assertEquals(8, request.getAvgServiceTimeMinutes());
     }
 
     @Test
-    void testBuilder() {
-        QueueTimingRequest request = QueueTimingRequest.builder()
-                .queueName("Regular Queue")
-                .description("Standard service queue")
-                .queueType(QueueType.GENERAL)
-                .avgServiceTimeMinutes(10)
-                .maxCapacity(50)
-                .colorCode("#00FF00")
-                .build();
+    void testGettersAndSetters() {
+        QueueTimingRequest request = new QueueTimingRequest();
+        request.setQueueName("Regular Queue");
+        request.setDescription("Handles walk-in customers");
+        request.setQueueType(QueueType.GENERAL);
+        request.setAvgServiceTimeMinutes(12);
+        request.setMaxCapacity(100);
+        request.setColorCode("#00FF00");
 
         assertEquals("Regular Queue", request.getQueueName());
-        assertEquals("Standard service queue", request.getDescription());
+        assertEquals("Handles walk-in customers", request.getDescription());
         assertEquals(QueueType.GENERAL, request.getQueueType());
-        assertEquals(10, request.getAvgServiceTimeMinutes());
-        assertEquals(50, request.getMaxCapacity());
+        assertEquals(12, request.getAvgServiceTimeMinutes());
+        assertEquals(100, request.getMaxCapacity());
         assertEquals("#00FF00", request.getColorCode());
     }
-    
-    @Test
-    void testToString() {
-        QueueTimingRequest request = QueueTimingRequest.builder()
-                .queueName("VIP Queue")
-                .description("Priority queue")
-                .queueType(QueueType.EXPRESS)
-                .avgServiceTimeMinutes(20)
-                .build();
-
-        String toString = request.toString();
-        assertTrue(toString.contains("VIP Queue"));
-        assertTrue(toString.contains("Priority queue"));
-        assertTrue(toString.contains("VIP"));
-        assertTrue(toString.contains("20"));
-    }
 
     @Test
-    void testOtherConstructor() {
-        QueueTimingRequest request = new QueueTimingRequest("Express Queue", QueueType.EXPRESS, 5);
+    void testDefaultConstructorInitialValues() {
+        QueueTimingRequest request = new QueueTimingRequest();
 
-        assertEquals("Express Queue", request.getQueueName());
-        assertEquals(QueueType.EXPRESS, request.getQueueType());
-        assertEquals(5, request.getAvgServiceTimeMinutes());
-
-        // Other fields should be null
+        assertNull(request.getQueueName());
         assertNull(request.getDescription());
+        assertNull(request.getQueueType());
+        assertNull(request.getAvgServiceTimeMinutes());
         assertNull(request.getMaxCapacity());
         assertNull(request.getColorCode());
     }

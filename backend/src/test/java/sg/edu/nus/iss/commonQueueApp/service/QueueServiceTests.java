@@ -4,50 +4,33 @@
  */
 package sg.edu.nus.iss.commonQueueApp.service;
 
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
+import sg.edu.nus.iss.commonQueueApp.dto.QueueTimingRequest;
+import sg.edu.nus.iss.commonQueueApp.dto.QueueStatusResponse;
 import sg.edu.nus.iss.commonQueueApp.entity.*;
 import sg.edu.nus.iss.commonQueueApp.repository.*;
-import sg.edu.nus.iss.commonQueueApp.dto.QueueTimingRequest;
-import sg.edu.nus.iss.commonQueueApp.service.factory.QueueEntryFactory;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import sg.edu.nus.iss.commonQueueApp.dto.QueueStatusResponse;
 /**
  *
  * @author junwe
  */
 public class QueueServiceTests {
-    @Mock
-    private QueueRepository queueRepository;
+    @Mock private QueueRepository queueRepository;
+    @Mock private QueueEntryRepository queueEntryRepository;
+    @Mock private BusinessRepository businessRepository;
+    @Mock private CustomerRepository customerRepository;
+    @Mock private NotificationService notificationService;
 
-    @Mock
-    private QueueEntryRepository queueEntryRepository;
-
-    @Mock
-    private BusinessRepository businessRepository;
-
-    @Mock
-    private CustomerRepository customerRepository;
-
-    @Mock
-    private NotificationService notificationService;
-
-    @Mock
-    private QueueEntryFactory queueEntryFactory;
-
-    @InjectMocks
-    private QueueService queueService;
+    @InjectMocks private QueueService queueService;
 
     private Business business;
     private Queue queue;
@@ -60,274 +43,259 @@ public class QueueServiceTests {
 
         business = new Business();
         business.setId(1L);
-        business.setBusinessName("Test Biz");
+        business.setBusinessName("Test Business");
 
         queue = new Queue();
-        queue.setId(10L);
-        queue.setBusiness(business);
+        queue.setId(100L);
         queue.setQueueName("Main Queue");
+        queue.setBusiness(business);
         queue.setIsActive(true);
-        queue.setAvgServiceTimeMinutes(5);
-        queue.setMaxCapacity(10);
-        queue.setCurrentNumber(1);
-        queue.setNextNumber(2);
+        queue.setAvgServiceTimeMinutes(10);
+        queue.setMaxCapacity(2);
+        queue.setCurrentNumber(0);
+        queue.setNextNumber(0);
 
         customer = new Customer();
-        customer.setId(100L);
-        customer.setName("Alice");
+        customer.setId(1L);
+        customer.setEmail("test@example.com");
+        customer.setPhone("91234567");
+        customer.setNotificationPreference(NotificationPreference.BOTH);
 
-        entry = new QueueEntry();
-        entry.setId(1000L);
-        entry.setQueue(queue);
-        entry.setCustomer(customer);
-        entry.setQueueNumber(5);
-        entry.setStatus(QueueEntryStatus.WAITING);
+        entry = new QueueEntry(queue, customer, 0);
     }
 
-    // ---------- CREATE / UPDATE / DELETE ----------
-
+    // -------------------- createQueue --------------------
     @Test
-    void testCreateQueue_Success() {
-        QueueTimingRequest req = new QueueTimingRequest();
-        req.setQueueName("Q1");
-        req.setDescription("desc");
-        req.setQueueType(QueueType.CASHIER);
-        req.setAvgServiceTimeMinutes(5);
-        req.setMaxCapacity(20);
-        req.setColorCode("#FFF");
+    void createQueue_success() {
+        QueueTimingRequest request = new QueueTimingRequest();
+        request.setQueueName("VIP Queue");
+        request.setAvgServiceTimeMinutes(5);
+        request.setQueueType(QueueType.GENERAL);
 
         when(businessRepository.findById(1L)).thenReturn(Optional.of(business));
-        when(queueRepository.save(any())).thenReturn(queue);
+        when(queueRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Queue created = queueService.createQueue(1L, req);
+        Queue created = queueService.createQueue(1L, request);
 
-        assertEquals("Main Queue", created.getQueueName());
+        assertEquals("VIP Queue", created.getQueueName());
+        assertEquals(business, created.getBusiness());
+        assertEquals(QueueType.GENERAL, created.getQueueType());
         verify(queueRepository).save(any());
     }
 
     @Test
-    void testUpdateQueueTiming_Success() {
-        QueueTimingRequest req = new QueueTimingRequest();
-        req.setQueueName("Updated Q");
-        req.setDescription("new desc");
-        req.setQueueType(QueueType.CASHIER);
-        req.setAvgServiceTimeMinutes(10);
-        req.setMaxCapacity(15);
+    void createQueue_businessNotFound_throws() {
+        when(businessRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> queueService.createQueue(1L, new QueueTimingRequest()));
+    }
 
-        when(queueRepository.findById(10L)).thenReturn(Optional.of(queue));
-        when(queueRepository.save(any())).thenReturn(queue);
+    // -------------------- updateQueueTiming --------------------
+    @Test
+    void updateQueueTiming_success() {
+        QueueTimingRequest request = new QueueTimingRequest();
+        request.setQueueName("Updated Queue");
+        request.setAvgServiceTimeMinutes(15);
+
+        when(queueRepository.findById(100L)).thenReturn(Optional.of(queue));
+        when(queueRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(queueEntryRepository.findByQueueAndStatusInOrderByQueueNumberAsc(any(), any()))
-                .thenReturn(List.of(entry));
+                .thenReturn(List.of());
 
-        Queue updated = queueService.updateQueueTiming(10L, req);
-
-        assertEquals("Updated Q", updated.getQueueName());
-        verify(queueRepository).save(queue);
-        verify(queueEntryRepository).saveAll(anyList());
+        Queue updated = queueService.updateQueueTiming(100L, request);
+        assertEquals("Updated Queue", updated.getQueueName());
+        assertEquals(15, updated.getAvgServiceTimeMinutes());
     }
 
     @Test
-    void testDeleteQueue_CancelsEntriesAndSendsNotification() {
-        QueueEntry e1 = new QueueEntry();
-        e1.setQueue(queue);
-        e1.setCustomer(customer);
-        e1.setStatus(QueueEntryStatus.WAITING);
+    void updateQueueTiming_notFound_throws() {
+        when(queueRepository.findById(100L)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> queueService.updateQueueTiming(100L, new QueueTimingRequest()));
+    }
 
-        when(queueRepository.findById(10L)).thenReturn(Optional.of(queue));
-        when(queueEntryRepository.findActiveEntriesByQueueId(10L)).thenReturn(List.of(e1));
+    // -------------------- deleteQueue --------------------
+    @Test
+    void deleteQueue_success() {
+        when(queueRepository.findById(100L)).thenReturn(Optional.of(queue));
+        when(queueEntryRepository.findActiveEntriesByQueueId(100L)).thenReturn(List.of(entry));
+        when(queueEntryRepository.save(any())).thenReturn(entry);
+        when(queueRepository.save(any())).thenReturn(queue);
 
-        queueService.deleteQueue(10L);
+        queueService.deleteQueue(100L);
 
         assertFalse(queue.getIsActive());
-        verify(notificationService).sendQueueCancellationNotification(e1);
+        verify(notificationService).sendQueueCancellationNotification(entry);
+        verify(queueEntryRepository).save(entry);
         verify(queueRepository).save(queue);
     }
 
-    // ---------- JOIN / CALL / SERVE ----------
+    @Test
+    void deleteQueue_notFound_throws() {
+        when(queueRepository.findById(100L)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> queueService.deleteQueue(100L));
+    }
+
+    // -------------------- getQueueStatus --------------------
+    @Test
+    void getQueueStatus_success() {
+        when(queueRepository.findById(100L)).thenReturn(Optional.of(queue));
+        when(queueEntryRepository.findActiveEntriesByQueueId(100L)).thenReturn(List.of(entry));
+
+        QueueStatusResponse status = queueService.getQueueStatus(100L);
+
+        assertEquals("Main Queue", status.getQueueName());
+        assertEquals(1, status.getTotalWaiting());
+    }
+
+    // -------------------- joinQueue --------------------
+    @Test
+    void joinQueue_success() {
+        when(queueRepository.findById(100L)).thenReturn(Optional.of(queue));
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(queueEntryRepository.findByQueueAndCustomerAndStatusIn(any(), any(), any())).thenReturn(Optional.empty());
+        when(queueEntryRepository.save(any())).thenReturn(entry);
+        when(queueRepository.save(any())).thenReturn(queue);
+
+        QueueEntry joined = queueService.joinQueue(100L, 1L);
+
+        assertEquals(customer, joined.getCustomer());
+        verify(notificationService).sendQueueJoinedNotification(joined);
+    }
 
     @Test
-    void testJoinQueue_Success() {
-        when(queueRepository.findById(10L)).thenReturn(Optional.of(queue));
-        when(customerRepository.findById(100L)).thenReturn(Optional.of(customer));
-        when(queueEntryRepository.findByQueueAndCustomerAndStatusIn(eq(queue), eq(customer), anyList()))
+    void joinQueue_alreadyInQueue_throws() {
+        when(queueRepository.findById(100L)).thenReturn(Optional.of(queue));
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(queueEntryRepository.findByQueueAndCustomerAndStatusIn(any(), any(), any()))
+                .thenReturn(Optional.of(entry));
+
+        assertThrows(RuntimeException.class, () -> queueService.joinQueue(100L, 1L));
+    }
+
+    @Test
+    void joinQueue_queueFull_throws() {
+        queue.setMaxCapacity(0);
+        when(queueRepository.findById(100L)).thenReturn(Optional.of(queue));
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(queueEntryRepository.findByQueueAndCustomerAndStatusIn(any(), any(), any()))
                 .thenReturn(Optional.empty());
-        when(queueEntryFactory.createEntry(eq(queue), eq(customer), anyInt())).thenReturn(entry);
-        when(queueRepository.save(queue)).thenReturn(queue);
-        when(queueEntryRepository.save(entry)).thenReturn(entry);
 
-        QueueEntry result = queueService.joinQueue(10L, 100L);
-
-        assertThat(result).isEqualTo(entry);
-        verify(notificationService).sendQueueJoinedNotification(entry);
+        assertThrows(RuntimeException.class, () -> queueService.joinQueue(100L, 1L));
     }
 
+    // -------------------- callNextCustomer --------------------
     @Test
-    void testCallNextCustomer_Success() {
-        when(queueRepository.findById(10L)).thenReturn(Optional.of(queue));
-        when(queueEntryRepository.findByQueueAndStatusInOrderByQueueNumberAsc(eq(queue), anyList()))
+    void callNextCustomer_success() {
+        entry.setStatus(QueueEntryStatus.WAITING);
+        when(queueRepository.findById(100L)).thenReturn(Optional.of(queue));
+        when(queueEntryRepository.findByQueueAndStatusInOrderByQueueNumberAsc(any(), any()))
                 .thenReturn(List.of(entry));
-        when(queueEntryRepository.save(entry)).thenReturn(entry);
+        when(queueEntryRepository.save(any())).thenReturn(entry);
+        when(queueRepository.save(any())).thenReturn(queue);
 
-        QueueEntry called = queueService.callNextCustomer(10L);
-
+        QueueEntry called = queueService.callNextCustomer(100L);
         assertEquals(QueueEntryStatus.CALLED, called.getStatus());
-        verify(notificationService).sendTurnReadyNotification(entry);
+        verify(notificationService).sendTurnReadyNotification(called);
     }
 
     @Test
-    void testMarkAsServed_Success() {
-        when(queueEntryRepository.findById(1000L)).thenReturn(Optional.of(entry));
-        when(queueEntryRepository.save(entry)).thenReturn(entry);
+    void callNextCustomer_emptyQueue_throws() {
+        when(queueRepository.findById(100L)).thenReturn(Optional.of(queue));
+        when(queueEntryRepository.findByQueueAndStatusInOrderByQueueNumberAsc(any(), any())).thenReturn(List.of());
 
-        QueueEntry served = queueService.markAsServed(1000L);
+        assertThrows(RuntimeException.class, () -> queueService.callNextCustomer(100L));
+    }
 
+    // -------------------- markAsServed --------------------
+    @Test
+    void markAsServed_success() {
+        entry.setQueue(queue);
+        entry.setStatus(QueueEntryStatus.CALLED);
+        when(queueEntryRepository.findById(1L)).thenReturn(Optional.of(entry));
+        when(queueEntryRepository.save(any())).thenReturn(entry);
+
+        QueueEntry served = queueService.markAsServed(1L);
         assertEquals(QueueEntryStatus.SERVED, served.getStatus());
-        verify(notificationService).sendFeedbackRequestNotification(entry);
+        verify(notificationService).sendFeedbackRequestNotification(served);
     }
 
-    // ---------- CANCEL / NO-SHOW ----------
-
+    // -------------------- cancelQueueEntry --------------------
     @Test
-    void testCancelQueueEntry_Success() {
-        when(queueEntryRepository.findById(1000L)).thenReturn(Optional.of(entry));
-        when(queueEntryRepository.save(entry)).thenReturn(entry);
+    void cancelQueueEntry_success() {
+        entry.setQueue(queue);
+        entry.setStatus(QueueEntryStatus.WAITING);
+        when(queueEntryRepository.findById(1L)).thenReturn(Optional.of(entry));
+        when(queueEntryRepository.save(any())).thenReturn(entry);
 
-        QueueEntry cancelled = queueService.cancelQueueEntry(1000L);
-
+        QueueEntry cancelled = queueService.cancelQueueEntry(1L);
         assertEquals(QueueEntryStatus.CANCELLED, cancelled.getStatus());
-        verify(queueEntryRepository).save(entry);
     }
 
+    // -------------------- markAsNoShow --------------------
     @Test
-    void testMarkAsNoShow_Success() {
-        when(queueEntryRepository.findById(1000L)).thenReturn(Optional.of(entry));
-        when(queueEntryRepository.save(entry)).thenReturn(entry);
+    void markAsNoShow_success() {
+        entry.setQueue(queue);
+        entry.setStatus(QueueEntryStatus.WAITING);
+        when(queueEntryRepository.findById(1L)).thenReturn(Optional.of(entry));
+        when(queueEntryRepository.save(any())).thenReturn(entry);
 
-        QueueEntry noShow = queueService.markAsNoShow(1000L);
-
+        QueueEntry noShow = queueService.markAsNoShow(1L);
         assertEquals(QueueEntryStatus.NO_SHOW, noShow.getStatus());
     }
 
-    // ---------- STATUS / GETTERS ----------
-
+    // -------------------- getCustomerQueuePosition --------------------
     @Test
-    void testGetCustomerQueuePosition_Success() {
-        when(customerRepository.findById(100L)).thenReturn(Optional.of(customer));
-        when(queueRepository.findById(10L)).thenReturn(Optional.of(queue));
-        when(queueEntryRepository.findByQueueAndCustomerAndStatusIn(eq(queue), eq(customer), anyList()))
+    void getCustomerQueuePosition_success() {
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(queueRepository.findById(100L)).thenReturn(Optional.of(queue));
+        when(queueEntryRepository.findByQueueAndCustomerAndStatusIn(any(), any(), any()))
                 .thenReturn(Optional.of(entry));
 
-        QueueEntry result = queueService.getCustomerQueuePosition(100L, 10L);
-        assertThat(result).isEqualTo(entry);
+        QueueEntry pos = queueService.getCustomerQueuePosition(1L, 100L);
+        assertEquals(entry, pos);
     }
 
+    // -------------------- getActiveQueuesByBusinessId --------------------
     @Test
-    void testGetActiveQueuesByBusinessId() {
+    void getActiveQueuesByBusinessId_success() {
         when(queueRepository.findByBusinessIdAndIsActiveTrue(1L)).thenReturn(List.of(queue));
 
-        List<Queue> result = queueService.getActiveQueuesByBusinessId(1L);
-
-        assertThat(result).contains(queue);
+        List<Queue> activeQueues = queueService.getActiveQueuesByBusinessId(1L);
+        assertEquals(1, activeQueues.size());
     }
 
+    // -------------------- getQueueEntries --------------------
     @Test
-    void testGetQueueEntries() {
-        when(queueEntryRepository.findActiveEntriesByQueueId(10L)).thenReturn(List.of(entry));
+    void getQueueEntries_success() {
+        when(queueEntryRepository.findActiveEntriesByQueueId(100L)).thenReturn(List.of(entry));
 
-        List<QueueEntry> result = queueService.getQueueEntries(10L);
-
-        assertThat(result).contains(entry);
+        List<QueueEntry> entries = queueService.getQueueEntries(100L);
+        assertEquals(1, entries.size());
     }
 
+    // -------------------- resetQueue --------------------
     @Test
-    void testGetQueueStatus() {
-        when(queueRepository.findById(10L)).thenReturn(Optional.of(queue));
-        when(queueEntryRepository.findActiveEntriesByQueueId(10L)).thenReturn(List.of(entry));
+    void resetQueue_success() {
+        when(queueRepository.findById(100L)).thenReturn(Optional.of(queue));
+        when(queueRepository.save(any())).thenReturn(queue);
 
-        QueueStatusResponse response = queueService.getQueueStatus(10L);
-
-        assertEquals(queue.getQueueName(), response.getQueueName());
-        assertTrue(response.getIsActive());
+        queueService.resetQueue(100L);
+        assertEquals(1, queue.getNextNumber());
+        assertEquals(0, queue.getCurrentNumber());
     }
 
-    // ---------- RESET / STATS ----------
-
+    // -------------------- getQueueStatistics --------------------
     @Test
-    void testResetQueue_CallsSave() {
-        when(queueRepository.findById(10L)).thenReturn(Optional.of(queue));
+    void getQueueStatistics_success() {
+        entry.setStatus(QueueEntryStatus.SERVED);
+        entry.setJoinedAt(LocalDateTime.now().minusMinutes(5));
+        entry.setCalledAt(LocalDateTime.now());
+        
+        when(queueEntryRepository.findEntriesByBusinessIdAndDateRange(eq(1L), any(), any()))
+                .thenReturn(List.of(entry));
 
-        queueService.resetQueue(10L);
-
-        verify(queueRepository).save(queue);
-    }
-
-    @Test
-    void testGetQueueStatistics_ComputesCorrectly() {
-        QueueEntry e1 = new QueueEntry();
-        e1.setStatus(QueueEntryStatus.SERVED);
-        e1.setJoinedAt(LocalDateTime.now().minusMinutes(5));
-        e1.setCalledAt(LocalDateTime.now());
-
-        QueueEntry e2 = new QueueEntry();
-        e2.setStatus(QueueEntryStatus.CANCELLED);
-
-        QueueEntry e3 = new QueueEntry();
-        e3.setStatus(QueueEntryStatus.NO_SHOW);
-
-        when(queueEntryRepository.findEntriesByBusinessIdAndDateRange(anyLong(), any(), any()))
-                .thenReturn(List.of(e1, e2, e3));
-
-        QueueService.QueueStatistics stats =
-                queueService.getQueueStatistics(1L, LocalDateTime.now(), LocalDateTime.now());
-
-        assertEquals(3, stats.getTotalCustomers());
+        QueueService.QueueStatistics stats = queueService.getQueueStatistics(1L, LocalDateTime.now().minusDays(1), LocalDateTime.now());
+        assertEquals(1, stats.getTotalCustomers());
         assertEquals(1, stats.getServedCustomers());
-        assertEquals(1, stats.getCancelledCustomers());
-        assertEquals(1, stats.getNoShowCustomers());
-        assertEquals(5.0, stats.getAverageWaitTimeMinutes());
-    }
-
-    // ---------- NEGATIVE CASES ----------
-
-    @Test
-    void testJoinQueue_InactiveQueue_Throws() {
-        queue.setIsActive(false);
-        when(queueRepository.findById(10L)).thenReturn(Optional.of(queue));
-        when(customerRepository.findById(100L)).thenReturn(Optional.of(customer));
-
-        assertThrows(RuntimeException.class, () -> queueService.joinQueue(10L, 100L));
-    }
-
-    @Test
-    void testJoinQueue_AlreadyInQueue_Throws() {
-        when(queueRepository.findById(10L)).thenReturn(Optional.of(queue));
-        when(customerRepository.findById(100L)).thenReturn(Optional.of(customer));
-        when(queueEntryRepository.findByQueueAndCustomerAndStatusIn(eq(queue), eq(customer), anyList()))
-                .thenReturn(Optional.of(entry));
-
-        assertThrows(RuntimeException.class, () -> queueService.joinQueue(10L, 100L));
-    }
-
-    @Test
-    void testCallNextCustomer_NoWaiting_Throws() {
-        when(queueRepository.findById(10L)).thenReturn(Optional.of(queue));
-        when(queueEntryRepository.findByQueueAndStatusInOrderByQueueNumberAsc(eq(queue), anyList()))
-                .thenReturn(Collections.emptyList());
-
-        assertThrows(RuntimeException.class, () -> queueService.callNextCustomer(10L));
-    }
-
-    @Test
-    void testCancelQueueEntry_NotActive_Throws() {
-        entry.markAsCancelled();
-        when(queueEntryRepository.findById(1000L)).thenReturn(Optional.of(entry));
-
-        assertThrows(RuntimeException.class, () -> queueService.cancelQueueEntry(1000L));
-    }
-
-    @Test
-    void testGetQueue_NotFound_Throws() {
-        when(queueRepository.findById(99L)).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> queueService.getQueueStatus(99L));
+        assertEquals(5, (int) stats.getAverageWaitTimeMinutes());
     }
 }

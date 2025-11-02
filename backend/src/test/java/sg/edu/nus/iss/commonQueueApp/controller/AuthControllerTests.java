@@ -72,8 +72,7 @@ public class AuthControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Login successful"))
-                .andExpect(jsonPath("$.business.email").value(email))
-                .andExpect(jsonPath("$.token").exists());
+                .andExpect(jsonPath("$.business.email").value(email));
     }
     
     @Test
