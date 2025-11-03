@@ -31,7 +31,7 @@ import { debounceTime, distinctUntilChanged, startWith, switchMap } from 'rxjs/o
   template: `
     <div class="container">
       <div class="search-section">
-        <h1>Find More Businesses</h1>
+        <h1>Find Businesses</h1>
         <mat-form-field appearance="outline" class="search-field">
           <mat-label>Search businesses</mat-label>
           <mat-icon matPrefix>search</mat-icon>
